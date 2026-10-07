@@ -1,0 +1,111 @@
+{
+  "title": "CompanyBench public company-search catalogue",
+  "version": "2.0.0",
+  "research_date": "2026-10-06",
+  "query_count": 250,
+  "development_query_count": 12,
+  "public_web_queries": 250,
+  "exhaustive_reference_queries": 10,
+  "source_count": 74,
+  "purpose": "Breadth-focused authored catalogue for provider comparison; not a usage-weighted or statistically representative sample.",
+  "execution_status": "Queries and historical references only; no live benchmark results or human audit are implied.",
+  "original_catalogue_sha256": "7998a0a7d4739f43a80d59f98e15be382dec81dabf200d64750be76bbebe7f5d",
+  "index_policy": "One-based immutable release order; IDs persist independently. CSB-096 through CSB-120 are retired; their numbers are not reused.",
+  "counts": {
+    "complexity": {
+      "L1": 27,
+      "L2": 71,
+      "L3": 118,
+      "L4": 34
+    },
+    "industry": {
+      "Agriculture and food": 7,
+      "Construction and real estate": 8,
+      "Cross-industry": 23,
+      "Education and training": 8,
+      "Energy and utilities": 9,
+      "Financial services": 14,
+      "Healthcare and life sciences": 16,
+      "Hospitality and leisure": 11,
+      "IT services": 5,
+      "Manufacturing": 31,
+      "Marketing and advertising": 3,
+      "Media and entertainment": 3,
+      "Professional and business services": 22,
+      "Retail and consumer goods": 21,
+      "Software": 50,
+      "Telecommunications": 3,
+      "Transportation and logistics": 13,
+      "Wholesale and distribution": 3
+    },
+    "family": {
+      "Clinical milestones": 2,
+      "Competitive replacement": 3,
+      "Credentials and certifications": 7,
+      "Customer evidence": 3,
+      "Directory membership": 2,
+      "Ecosystem and partners": 9,
+      "Entity resolution": 1,
+      "Expansion": 19,
+      "Financial profile": 3,
+      "Finite public reference": 10,
+      "Firmographics": 27,
+      "Funding": 6,
+      "Geography disambiguation": 5,
+      "Hiring demand": 7,
+      "Industry classification": 1,
+      "Language and localization": 2,
+      "Leadership change": 6,
+      "Lookalikes": 10,
+      "Operating footprint": 6,
+      "Operating metrics": 6,
+      "Ownership": 6,
+      "Procurement and contract wins": 4,
+      "Product and business model": 33,
+      "Product and business-model change": 8,
+      "Public expressed need": 4,
+      "Regulatory events": 3,
+      "Semantic exclusion": 4,
+      "Semantic niche": 29,
+      "Stack combinations": 8,
+      "Technographics": 10,
+      "Technology migration": 5,
+      "Workforce growth": 1
+    },
+    "primary_category": {
+      "ecosystem": 32,
+      "finite_reference": 10,
+      "firmographic": 47,
+      "semantic": 74,
+      "signals": 61,
+      "technographic": 26
+    }
+  },
+  "conditions_policy": "Original query and acceptance wording are frozen into one semantic condition to preserve nested OR, exclusions, thresholds and sequences without lossy string splitting. New cases use separately authored conditions where safe. No criteria are generated at run time.",
+  "reference_policy": "Only the ten explicit dated official cohorts have exhaustive membership. Provider inputs must exclude reference answers, provenance, expected_count and scoring metadata. Historical company identities take precedence over current ownership.",
+  "time_policy": "All rolling windows use (reference_time - N days, reference_time]. Fixed historical cohorts use their specified date; latest reports must have been public by reference_time.",
+  "provenance_policy": "source_inspired refers to use-case inspiration; exact wording and thresholds are authored, not observed customer-query logs.",
+  "missing_evidence": "Unknown is separate from failed; a missing page, blocked fetch or undetected technology never establishes absence.",
+  "errata": [
+    {
+      "revision": "2.0.0",
+      "ids": "CSB-096–CSB-120",
+      "change": "Retired all 25 supplied-data cases; added CSB-251–CSB-275 as 10 simple, 10 finite-reference and 5 public-signal cases."
+    },
+    {
+      "revision": "2.0.0",
+      "ids": "CSB-121,122,124,125,138",
+      "change": "Added explicit public HTML verification method; text-only fetch failure cannot disprove live technographics."
+    },
+    {
+      "revision": "2.0.0",
+      "ids": "CSB-198",
+      "change": "Explicit geospatial evidence/calculation requirement; missing coordinates remain unknown."
+    },
+    {
+      "revision": "2.0.0",
+      "ids": "All retained public queries",
+      "change": "Preserved query and acceptance text; added explicit semantic conditions and disjoint primary categories. No claims of verified satisfiability or exhaustive gold are made outside reference cohorts."
+    }
+  ]
+}

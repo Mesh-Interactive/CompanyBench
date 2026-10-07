@@ -1,0 +1,30 @@
+name: Provider or judge integration
+description: Propose a search provider, judge, or documented configuration change.
+title: 'Integration: '
+body:
+  - type: input
+    id: system
+    attributes:
+      label: Product and configuration
+      description: Endpoint, model, effort setting, and whether it searches or judges.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Public contract and lifecycle
+      description: Link official documentation. Describe immediate results or submit/poll behavior, pagination, native limits, usage fields, and cancellation or cleanup support.
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: Pricing and verification
+      description: Link the rate schedule and effective date. State whether a live call has been verified, with a sanitized fixture if available. Do not post credentials or private account information.
+    validations:
+      required: true
+  - type: textarea
+    id: contribution
+    attributes:
+      label: Proposed implementation
+      description: Optional adapter sketch, existing plugin, or pull request. Small integrations with mocked contract tests are welcome.

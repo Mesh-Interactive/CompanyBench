@@ -1,0 +1,18 @@
+# Small provider configuration; query selection remains explicit on the CLI.
+# Without --sample/--indices/--where the complete catalogue runs.
+[run]
+providers = ["openai-sol-medium"]
+judges = ["llm"]
+target_count = 50
+trials = 1
+concurrency = 2
+provider_concurrency = 2
+poll_interval = 5
+timeout = 7200
+seed = 42
+
+[judges.llm]
+model = "gpt-6-astra"
+
+[research]
+model = "gpt-6-astra"

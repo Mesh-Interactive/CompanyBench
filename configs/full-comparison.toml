@@ -1,0 +1,27 @@
+# All 250 queries, all 14 named systems. Configure every listed API key first.
+[run]
+providers = ["avina", "exa-websets", "exa-agent-high", "exa-agent-auto", "parallel-core", "parallel-pro", "openai-sol-medium", "openai-astra-max", "claude-sonnet-medium", "claude-opus-max", "gemini-flash-high", "gemini-pro-high", "grok-low", "grok-xhigh"]
+judges = ["llm"]
+target_count = 50
+trials = 1
+concurrency = 4
+provider_concurrency = 2
+poll_interval = 5
+timeout = 7200
+seed = 42
+# budget_usd = 3000  # Soft estimated budget; in-flight/opaque usage can exceed it.
+
+[providers.avina]
+# Use an isolated benchmark workspace with no personas or integrations.
+# base_url = "https://api.avina.io/v1"
+# account_credit_price = 0.25  # Your documented account rate, not a billed charge.
+
+[providers.exa-websets]
+public_monthly_usd = 449
+public_included_credits = 100000
+
+[judges.llm]
+model = "gpt-6-astra"
+
+[research]
+model = "gpt-6-astra"

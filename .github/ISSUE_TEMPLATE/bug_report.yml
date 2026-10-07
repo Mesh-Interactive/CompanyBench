@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a reproducible failure in an adapter, metric, CLI, or report.
+title: 'Bug: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Include a minimal reproduction. Do not attach API keys, raw account data, or private run directories. A redacted publication bundle or small synthetic fixture is preferable.
+  - type: input
+    id: version
+    attributes:
+      label: Version and environment
+      description: Commit or package version, Python version, and operating system.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce
+      description: Command or Python snippet, relevant query IDs, and provider or judge configuration. Remove credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and observed behavior
+      description: Include the error text or a small redacted example. Say whether this was an offline test or a live API call.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting artifacts
+      description: Optional redacted bundle, public API documentation, or failing test. For a scoring error, identify the run/evidence version and condition.

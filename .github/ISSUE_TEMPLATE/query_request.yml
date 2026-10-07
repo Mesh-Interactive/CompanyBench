@@ -1,0 +1,30 @@
+name: Query or judgment correction
+description: Suggest a realistic query, improve acceptance criteria, or dispute a result.
+title: 'Query: '
+body:
+  - type: input
+    id: query
+    attributes:
+      label: Query or existing query ID
+      description: State the company list someone would actually want to build.
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case and acceptance criteria
+      description: Who needs this list? What counts as a matching company? Specify company unit, geography basis, dates, alternatives, and exclusions where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Public evidence and provenance
+      description: Link sources that motivate the query or establish a disputed fact. A complete reference cohort needs a dated authoritative enumeration; a few examples are not an exhaustive answer key. Do not include customer data.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: Existing result or catalogue correction
+      description: If applicable, give the dataset version, run/evidence version, company, exact condition, and why the current interpretation is wrong.

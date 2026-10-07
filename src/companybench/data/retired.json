@@ -1,0 +1,939 @@
+[
+  {
+    "id": "CSB-096",
+    "query": "Using the supplied first-party website events, find companies headquartered in the United States with 50–500 employees that generated pricing-page visits in at least three distinct human sessions in the last seven days.",
+    "family": "Website engagement",
+    "complexity": "L3",
+    "industry": "Cross-industry",
+    "geography": "United States",
+    "geography_basis": "HQ",
+    "size_band": "50–500 employees",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "employee_count",
+      "page_type",
+      "session_count"
+    ],
+    "signal_tags": [
+      "pricing_page_visits"
+    ],
+    "time_window": "last 7 days",
+    "logic": "THRESHOLD",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus web_events(event_id, account_id, visitor_id, session_id, timestamp, page_id, is_bot), pages(page_id, page_type), with complete seven-day event coverage. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Account snapshot and IDs/timestamps of three eligible sessions with pricing views.",
+    "acceptance": "Count distinct human session IDs; apply the frozen pricing-page taxonomy and account map; return one company group.",
+    "pitfalls": "Reloads or bots can create false repeated interest.",
+    "gtm_use_case": "Inbound account prioritization",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A12"
+    ],
+    "source_urls": [
+      "https://www.reddit.com/r/sales/comments/1reb55s/is_intent_data_for_leads_still_working_for_you_or/"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-097",
+    "query": "Using the supplied first-party website and contact-role data, find companies headquartered in Canada where at least three distinct verified business visitors from at least two departments visited product or pricing pages in the last 14 days, including at least one Director, VP or C-level visitor.",
+    "family": "Website engagement",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "Canada",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "visitor_count",
+      "department_count",
+      "seniority",
+      "page_type"
+    ],
+    "signal_tags": [
+      "multi_contact_engagement"
+    ],
+    "time_window": "last 14 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus web_events(event_id, account_id, visitor_id, timestamp, page_type, is_bot), identity(visitor_id, person_key, verified_company_id, department, seniority, valid_from, valid_to), with complete 14-day coverage. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Eligible web-event IDs and verified visitor-to-company, department and seniority mappings.",
+    "acceptance": "Count distinct deduplicated visitors, two departments and qualifying seniority; role must be valid at visit time; output company only.",
+    "pitfalls": "Three cookies may represent one person.",
+    "gtm_use_case": "Buying-group discovery",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A02"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-098",
+    "query": "Using the supplied CRM and website snapshots, find companies headquartered in the United Kingdom with a deal closed lost in the last 365 days that visited a pricing page in the last 14 days and have neither a current customer contract nor an open opportunity at the run date.",
+    "family": "CRM reactivation",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "United Kingdom",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "opportunity_status",
+      "customer_exclusion",
+      "page_type"
+    ],
+    "signal_tags": [
+      "closed_lost_reengagement"
+    ],
+    "time_window": "closed lost last 365 days; pricing activity last 14 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus opportunities(opportunity_id, account_id, status, closed_at), contracts(contract_id, account_id, active_from, active_to), web_events(event_id, account_id, timestamp, page_type, is_bot); exhaustive CRM status snapshot and 365-day deal history, complete 14-day website events. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Closed-lost opportunity, pricing event and complete current opportunities/contracts for each account.",
+    "acceptance": "Both exclusions require complete supplied CRM coverage; missing opportunity or contract exports are unknown; exclude bots and return account group.",
+    "pitfalls": "A lost subsidiary deal can coexist with an active parent relationship.",
+    "gtm_use_case": "Closed-lost win-back",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A02"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-099",
+    "query": "Using the supplied CRM stage history and website events, find companies headquartered in Germany with an open opportunity unchanged in stage for at least 45 days whose mapped primary opportunity contact visited the demo-request page in the last seven days.",
+    "family": "CRM reactivation",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "Germany",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "opportunity_status",
+      "stage_age",
+      "contact_relationship",
+      "page_type"
+    ],
+    "signal_tags": [
+      "stalled_opportunity_reengagement"
+    ],
+    "time_window": "stage unchanged 45+ days; website last 7 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus opportunities(opportunity_id, account_id, status, current_stage, primary_contact_key), stage_history(opportunity_id, stage, entered_at, exited_at), web_events(event_id, person_key, account_id, timestamp, page_type, is_bot); exhaustive open-opportunity state and 60 days of history. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Current stage-entry timestamp, primary-contact relationship and demo-page event.",
+    "acceptance": "At least one still-open opportunity qualifies; match the event to its primary contact as of visit time; page view is not a submitted demo.",
+    "pitfalls": "An unrelated account visitor may not belong to the stalled opportunity.",
+    "gtm_use_case": "Pipeline acceleration",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A02"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-100",
+    "query": "Using the supplied contracts and website events, find current Basic-plan customers headquartered in Australia that visited at least two distinct Enterprise-plan or add-on product pages in the last 14 days.",
+    "family": "Customer expansion",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "Australia",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "customer_status",
+      "plan_tier",
+      "distinct_page_count"
+    ],
+    "signal_tags": [
+      "upgrade_content_interest"
+    ],
+    "time_window": "current contract; website last 14 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus contracts(contract_id, account_id, plan_tier, starts_at, ends_at), web_events(event_id, account_id, timestamp, page_id, is_bot), pages(page_id, page_type, plan_tier, addon_id); current contract coverage and complete 14-day events. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Active Basic contract and two distinct eligible page IDs with dated human visits.",
+    "acceptance": "Plan must be Basic at run_date; count pages, not hits; use declared page taxonomy; return company group once.",
+    "pitfalls": "Support documentation can mention Enterprise without indicating upgrade interest.",
+    "gtm_use_case": "Expansion-sales prioritization",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A02"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-101",
+    "query": "Using the supplied customer-champion history and verified job-change records, find companies headquartered in the United States with 100–1,000 employees that gained one of our former customer champions in the last 90 days and are not current customers.",
+    "family": "Relationship movement",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "United States",
+    "geography_basis": "HQ",
+    "size_band": "100–1,000 employees",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "employee_count",
+      "prior_relationship",
+      "customer_exclusion"
+    ],
+    "signal_tags": [
+      "champion_job_change"
+    ],
+    "time_window": "last_90_days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus champions(person_key, former_account_id, champion_since, champion_until), employment_changes(person_key, old_account_id, new_account_id, effective_at, verification_status), contracts(account_id, active_from, active_to); complete current customer register and verified 90-day movements. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Historical champion flag at old customer, verified new-employer start date and exhaustive current contracts.",
+    "acceptance": "New employer must differ from prior company group; champion designation predates move; exclude current customers only from complete fixture. Return destination company.",
+    "pitfalls": "Internal transfers or employer rebrands may resemble job changes.",
+    "gtm_use_case": "Warm outbound through prior champions",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A10"
+    ],
+    "source_urls": [
+      "https://www.usergems.com/customers/segment"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-102",
+    "query": "Using the supplied employment, product-usage and contract data, find current customers headquartered in Canada where a former power user from another customer company joined in the last 90 days and fewer than 25% of purchased seats were active during the last 28 days.",
+    "family": "Relationship movement",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "Canada",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "customer_status",
+      "prior_relationship",
+      "seat_utilization"
+    ],
+    "signal_tags": [
+      "power_user_arrival",
+      "low_adoption"
+    ],
+    "time_window": "join last 90 days; activity last 28 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus power_users(person_key, account_id, designated_at, ended_at), employment_changes(person_key, old_account_id, new_account_id, effective_at, verification_status), contracts(account_id, licensed_seats, starts_at, ends_at), daily_usage(account_id, person_key, date, active); complete 28-day usage and current contracts. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Previous product power-user designation, verified destination employer, active-seat count and purchased-seat denominator.",
+    "acceptance": "Prior power-user status must predate transfer; denominator is current licensed seats; exclude contractors and same-group transfers; return destination customer.",
+    "pitfalls": "Changes to licensed seats can distort adoption ratios.",
+    "gtm_use_case": "Customer adoption recovery",
+    "source_basis": "original",
+    "source_ids": [
+      "A10"
+    ],
+    "source_urls": [
+      "https://www.usergems.com/customers/segment"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-103",
+    "query": "Using the supplied CRM, employment-change and renewal data, find customers headquartered in the United Kingdom whose designated primary champion left the company in the last 30 days and whose contract renews within the next 90 days.",
+    "family": "Relationship movement",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "United Kingdom",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "customer_status",
+      "champion_role",
+      "renewal_date"
+    ],
+    "signal_tags": [
+      "champion_departure",
+      "renewal_risk"
+    ],
+    "time_window": "departure last 30 days; scheduled renewal next 90 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus champion_assignments(account_id, person_key, primary_flag, valid_from, valid_to), employment_changes(person_key, old_account_id, effective_at, change_type, verification_status), contracts(account_id, active, renewal_date); complete current renewals and 30-day changes. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Primary champion assignment valid before departure, verified employment end and contract renewal schedule known by run_date.",
+    "acceptance": "Departure must already have occurred; renewal is a contractual future date from current snapshot; return the company losing the champion, not new employer.",
+    "pitfalls": "A promotion inside the account is not departure.",
+    "gtm_use_case": "Retention-risk triage",
+    "source_basis": "original",
+    "source_ids": [
+      "A10"
+    ],
+    "source_urls": [
+      "https://www.usergems.com/customers/segment"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-104",
+    "query": "Using the supplied licensed review-site intent export, find companies headquartered in any EU27 member state with 50–2,000 employees that directly compared our product with at least one named competitor on a comparison page in the last seven days.",
+    "family": "Licensed intent",
+    "complexity": "L3",
+    "industry": "Cross-industry",
+    "geography": "EU27",
+    "geography_basis": "HQ",
+    "size_band": "50–2,000 employees",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "employee_count",
+      "intent_type",
+      "competitor"
+    ],
+    "signal_tags": [
+      "review_site_comparison"
+    ],
+    "time_window": "last 7 days",
+    "logic": "AND",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus review_intent(event_id, account_id, occurred_at, signal_type, product_ids, target_product_id), product_dictionary(product_id, is_ours, is_competitor), EU27_country_codes fixed to the 27 member states at benchmark design; licensed seven-day export. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Licensed event ID, company match, event timestamp and compared product IDs.",
+    "acceptance": "Require comparison signal with our product and a fixture-listed competitor; category or alternatives page visits alone fail; resolve HQ with fixed EU27 country list.",
+    "pitfalls": "An alternatives visit does not prove direct side-by-side comparison.",
+    "gtm_use_case": "Competitive deal interception",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A11"
+    ],
+    "source_urls": [
+      "https://documentation.g2.com/docs/pt/buyer-intent"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-105",
+    "query": "Using the supplied licensed review-site intent and contracts, find current customers headquartered in the United States whose contract renews in the next 90 days and that viewed an alternatives page for our product in the last 14 days.",
+    "family": "Licensed intent",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "United States",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "customer_status",
+      "renewal_date",
+      "intent_type"
+    ],
+    "signal_tags": [
+      "competitor_research",
+      "renewal_risk"
+    ],
+    "time_window": "intent last 14 days; renewal next 90 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus review_intent(event_id, account_id, occurred_at, signal_type, page_subject_product_id), product_dictionary(product_id, is_ours), contracts(account_id, active, renewal_date); licensed 14-day events and complete current contracts. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Alternatives event with our product as page subject and active contract renewal date.",
+    "acceptance": "Distinguish alternatives to our product from pages merely listing us as an option; do not treat browsing as confirmed churn intention.",
+    "pitfalls": "Category-wide alternatives signals can be misattributed to our product.",
+    "gtm_use_case": "Customer retention prioritization",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A11"
+    ],
+    "source_urls": [
+      "https://documentation.g2.com/docs/pt/buyer-intent"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-106",
+    "query": "Using the supplied intent-score export, find manufacturers headquartered in Germany with 200–5,000 employees whose account-level cloud-cost-management topic score was at least 70 on a 0–100 scale in each of the two most recent complete reporting weeks.",
+    "family": "Licensed intent",
+    "complexity": "L3",
+    "industry": "Manufacturing",
+    "geography": "Germany",
+    "geography_basis": "HQ",
+    "size_band": "200–5,000 employees",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "industry",
+      "headquarters",
+      "employee_count",
+      "intent_topic",
+      "intent_score"
+    ],
+    "signal_tags": [
+      "sustained_topic_intent"
+    ],
+    "time_window": "two most recent complete reporting weeks",
+    "logic": "THRESHOLD",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus weekly_intent(account_id, topic_id, week_start, week_end, score, score_scale, reporting_complete), topic_dictionary(topic_id, definition), provider_scoring_version; at least two complete weeks on one declared 0–100 scale. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Two dated weekly score records for the same topic taxonomy and account.",
+    "acceptance": "Require both complete weeks from one consistent scoring system; missing week is unknown; score is a provider metric, not verified buying intent.",
+    "pitfalls": "Scores from different vendors are not interchangeable.",
+    "gtm_use_case": "FinOps account prioritization",
+    "source_basis": "original",
+    "source_ids": [
+      "A12"
+    ],
+    "source_urls": [
+      "https://www.reddit.com/r/sales/comments/1reb55s/is_intent_data_for_leads_still_working_for_you_or/"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-107",
+    "query": "Using the supplied product signup, usage and CRM data, find companies headquartered in the United States where at least five distinct employees created free accounts in the last 30 days, at least three of those employees used the product in the last seven days, and the company has no active paid contract.",
+    "family": "Product-led demand",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "United States",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "signup_count",
+      "active_user_count",
+      "customer_exclusion"
+    ],
+    "signal_tags": [
+      "bottom_up_adoption"
+    ],
+    "time_window": "signups last 30 days; usage last 7 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus signups(user_key, account_id, created_at, plan, corporate_domain_verified), usage(user_key, account_id, timestamp, event_type), contracts(account_id, paid, starts_at, ends_at), user_dedup(user_key, person_key); complete 30-day signups and seven-day meaningful-use events. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Five deduplicated signup identities, three matching active users and exhaustive paid contracts.",
+    "acceptance": "Corporate-domain match plus employee verification required; consumer email or dormant signups do not satisfy active-user count; return company group.",
+    "pitfalls": "Multiple personal accounts can belong to one employee.",
+    "gtm_use_case": "Free-to-paid account conversion",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A04"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library/shadow-it-and-bottom-up-adoption"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-108",
+    "query": "Using the supplied product metering and subscription snapshots, find current customers headquartered in France that consumed at least 80% of their daily API-call quota on each of the last three complete UTC days and have not already contracted for a higher tier.",
+    "family": "Customer expansion",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "France",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "customer_status",
+      "quota_utilization",
+      "plan_change_exclusion"
+    ],
+    "signal_tags": [
+      "usage_limit_pressure"
+    ],
+    "time_window": "last three complete UTC days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus daily_metering(account_id, date, consumed_calls, quota_calls, complete_day), subscriptions(account_id, tier, starts_at, ends_at), amendments(account_id, signed_at, effective_at, new_tier); exhaustive amendments and three complete UTC days of metering. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Daily consumed calls, daily contractual quotas and all signed future plan amendments.",
+    "acceptance": "Each daily ratio must be at least 0.8 using quota effective that day; a signed upgrade excludes account even if not activated.",
+    "pitfalls": "Quota changes or retry traffic can mimic demand growth.",
+    "gtm_use_case": "Usage-based expansion sales",
+    "source_basis": "original",
+    "source_ids": [
+      "A04"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library/shadow-it-and-bottom-up-adoption"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-109",
+    "query": "Using the supplied opt-in customer community and product-trial records, find companies headquartered in India where at least two verified employees described the same unresolved onboarding blocker in the last 30 days and the company has an active product trial.",
+    "family": "Product-led demand",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "India",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "employee_count_of_reporters",
+      "trial_status",
+      "issue_status"
+    ],
+    "signal_tags": [
+      "onboarding_blocker"
+    ],
+    "time_window": "last_30_days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus community_reports(report_id, person_key, account_id, timestamp, text, blocker_id, is_employee_verified, consent), blocker_status(blocker_id, resolved_at), trials(account_id, starts_at, ends_at); authorized content only, adjudicated issue linkage, complete current trial state. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Two distinct employee-authored issue reports sharing adjudicated blocker ID and current trial status.",
+    "acceptance": "Both reports must concern own company and same product blocker; issue remains unresolved at run_date; return account without personal identifiers.",
+    "pitfalls": "Similar wording can refer to different setup problems.",
+    "gtm_use_case": "Trial conversion and onboarding assistance",
+    "source_basis": "original",
+    "source_ids": [
+      "A04"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library/shadow-it-and-bottom-up-adoption"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-110",
+    "query": "Using the supplied webinar and website records, find companies headquartered in Singapore where an employee attended at least 20 minutes of a webinar held in the last 30 days and that same employee visited a pricing page within seven days after attending.",
+    "family": "Marketing engagement",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "Singapore",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "attendance_duration",
+      "page_type",
+      "same_person"
+    ],
+    "signal_tags": [
+      "webinar_followup"
+    ],
+    "time_window": "webinar last 30 days; pricing within 7 days afterward",
+    "logic": "SEQUENCE",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus webinars(webinar_id, starts_at, ends_at), attendance(webinar_id, person_key, attended_minutes, last_attended_at), web_events(event_id, person_key, account_id, timestamp, page_type, is_bot), employment(person_key, account_id, valid_from, valid_to); complete 37-day history. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Webinar attendance duration/end timestamp, person-to-account link and subsequent pricing event.",
+    "acceptance": "Require actual attendance, not registration; pricing must follow attendance within seven days and occur by run_date.",
+    "pitfalls": "A colleague’s pricing view does not satisfy same-person sequencing.",
+    "gtm_use_case": "Event follow-up prioritization",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A02"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-111",
+    "query": "Using the supplied email and website records, find companies headquartered in the United Kingdom where a verified employee clicked a marketing email in the last 14 days and then returned to the website in at least two distinct human sessions within seven days after that click.",
+    "family": "Marketing engagement",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "United Kingdom",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "email_action",
+      "session_count",
+      "same_person"
+    ],
+    "signal_tags": [
+      "email_to_website_engagement"
+    ],
+    "time_window": "email click last 14 days; return sessions within following 7 days",
+    "logic": "SEQUENCE",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus email_events(event_id, person_key, account_id, clicked_at, is_security_scanner, landing_session_id), web_sessions(session_id, person_key, account_id, starts_at, ends_at, is_bot); complete 21-day logs and current identity map. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Validated email click and two later session IDs tied to same person and employer.",
+    "acceptance": "Exclude security scanners and the immediate click-through session; sessions must start after that session ends and before run_date.",
+    "pitfalls": "Email security systems often generate clicks without human intent.",
+    "gtm_use_case": "Nurture reactivation",
+    "source_basis": "original",
+    "source_ids": [
+      "A02"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-112",
+    "query": "Using the supplied authorized social-engagement export, find B2B software companies headquartered in the United States where at least two verified employees made at least three total comments on posts published by named competitors during the last 30 days.",
+    "family": "Social engagement",
+    "complexity": "L3",
+    "industry": "Software",
+    "geography": "United States",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "B2B",
+    "filter_tags": [
+      "industry",
+      "headquarters",
+      "employee_count_of_engagers",
+      "engagement_type",
+      "competitor"
+    ],
+    "signal_tags": [
+      "competitor_social_engagement"
+    ],
+    "time_window": "last_30_days",
+    "logic": "THRESHOLD",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus social_events(event_id, person_key, timestamp, action_type, post_id, is_bot), posts(post_id, owner_company_id), competitors(company_id), employment(person_key, account_id, valid_from, valid_to, is_agency_agent); authorized export with 30-day coverage. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Comment IDs, timestamps, competitor post ownership and event-time employer mapping.",
+    "acceptance": "Require three distinct comments by two employees; exclude employees of the competitor, agencies posting on its behalf and bots; output company only.",
+    "pitfalls": "Commercial comments may be promotional rather than buying research.",
+    "gtm_use_case": "Social-informed account prioritization",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A12"
+    ],
+    "source_urls": [
+      "https://www.reddit.com/r/sales/comments/1reb55s/is_intent_data_for_leads_still_working_for_you_or/"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-113",
+    "query": "Using the supplied advertising and first-party website data, find companies headquartered in Canada whose employees clicked ads from at least two distinct campaigns in the last 14 days and whose account generated a product-page session in the last seven days.",
+    "family": "Marketing engagement",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "Canada",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "campaign_count",
+      "ad_action",
+      "page_type"
+    ],
+    "signal_tags": [
+      "ad_engagement",
+      "website_engagement"
+    ],
+    "time_window": "ad clicks last 14 days; product session last 7 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus ad_events(event_id, account_id, campaign_id, timestamp, action, attribution_status, is_bot), web_events(event_id, account_id, session_id, timestamp, page_type, is_bot); only account-verified ad events, complete 14-day ads and seven-day site data. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Two campaign IDs with valid ad clicks and a later or independent account-mapped product session.",
+    "acceptance": "Company-level join permitted; no same-person or ordering requirement; impressions do not count as clicks; exclude bots.",
+    "pitfalls": "Probabilistic ad account attribution can be less reliable than verified site identity.",
+    "gtm_use_case": "Paid-media account follow-up",
+    "source_basis": "original",
+    "source_ids": [
+      "A01"
+    ],
+    "source_urls": [
+      "https://www.avina.io/"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-114",
+    "query": "Using the supplied consented conference lead scans and account data, find manufacturers headquartered in the United States with 200–5,000 employees where attendees from both procurement and operations visited our booth at the same event held in the last 30 days.",
+    "family": "Marketing engagement",
+    "complexity": "L4",
+    "industry": "Manufacturing",
+    "geography": "United States",
+    "geography_basis": "HQ",
+    "size_band": "200–5,000 employees",
+    "business_model": "B2B",
+    "filter_tags": [
+      "industry",
+      "headquarters",
+      "employee_count",
+      "department_mix",
+      "same_event"
+    ],
+    "signal_tags": [
+      "conference_engagement"
+    ],
+    "time_window": "last_30_days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus events(event_id, starts_at, ends_at), booth_scans(scan_id, event_id, person_key, account_id, scanned_at, consented, attendee_type), roles(person_key, department, valid_from, valid_to); complete event export and verified employee affiliations. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Two distinct attendee scan records at same event, employer and departmental mappings.",
+    "acceptance": "Require actual consented booth scans and one attendee per required department; attendance list alone fails.",
+    "pitfalls": "Sponsors’ employees and exhibitors may appear in event attendee exports.",
+    "gtm_use_case": "Industrial account follow-up",
+    "source_basis": "original",
+    "source_ids": [
+      "A12"
+    ],
+    "source_urls": [
+      "https://www.reddit.com/r/sales/comments/1reb55s/is_intent_data_for_leads_still_working_for_you_or/"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-115",
+    "query": "Using the supplied funding-event and website data, find software companies headquartered in the United States that announced a Series A or B round in the last 180 days and had a Director-or-higher employee visit our pricing page in the last 14 days.",
+    "family": "Cross-signal demand",
+    "complexity": "L4",
+    "industry": "Software",
+    "geography": "United States",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "industry",
+      "headquarters",
+      "funding_stage",
+      "seniority",
+      "page_type"
+    ],
+    "signal_tags": [
+      "funding",
+      "pricing_page_visits"
+    ],
+    "time_window": "funding last 180 days; pricing last 14 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus funding(account_id, announced_at, round_stage, source_url), web_events(event_id, person_key, account_id, timestamp, page_type, is_bot), roles(person_key, seniority, valid_from, valid_to); cited 180-day funding export and 14-day events. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Cited funding record and dated human pricing view with event-time verified seniority.",
+    "acceptance": "Require both events at same company group; current job title cannot substitute for role at visit time; funding need not precede visit unless specified.",
+    "pitfalls": "Funding alone does not make the website visitor a decision-maker.",
+    "gtm_use_case": "Funded-account prioritization",
+    "source_basis": "original",
+    "source_ids": [
+      "A03"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library/series-c-or-later-growth-equity-round"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-116",
+    "query": "Using the supplied website events and case-study taxonomy, find healthcare provider companies headquartered in the United States that spent at least 120 engaged seconds on a case study featuring another healthcare provider in the last 14 days.",
+    "family": "Website engagement",
+    "complexity": "L4",
+    "industry": "Healthcare and life sciences",
+    "geography": "United States",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "Healthcare services",
+    "filter_tags": [
+      "industry",
+      "headquarters",
+      "content_vertical_match",
+      "engagement_duration"
+    ],
+    "signal_tags": [
+      "industry_matched_case_study"
+    ],
+    "time_window": "last 14 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus web_events(event_id, account_id, timestamp, page_id, engaged_seconds, is_bot), case_studies(page_id, featured_company_id, featured_industry, featured_business_type), account_business_types(account_id, type); complete 14-day events and curated vertical mapping. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Account vertical, featured customer vertical and a single qualifying page event with engaged-time measurement.",
+    "acceptance": "Require one human page visit with 120 engaged seconds; both accounts must be providers, not healthcare software vendors; do not sum unrelated short visits.",
+    "pitfalls": "Broad healthcare taxonomy can confuse sellers to hospitals with hospital operators.",
+    "gtm_use_case": "Reference-led healthcare sales",
+    "source_basis": "source_inspired",
+    "source_ids": [
+      "A05"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library/case-study-vertical-match"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-117",
+    "query": "Using the supplied account-intent and CRM activity exports, find companies headquartered in Germany with a review-site product-comparison event in the last 30 days and at least one separate first-party demo submission in that period for which no completed sales discovery call occurred between submission and the run date.",
+    "family": "Cross-signal demand",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "Germany",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "intent_type",
+      "form_submission",
+      "sales_activity_exclusion"
+    ],
+    "signal_tags": [
+      "review_site_comparison",
+      "demo_request"
+    ],
+    "time_window": "last_30_days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus intent(event_id, account_id, timestamp, type, origin_event_id), forms(submission_id, account_id, timestamp, form_type, valid_business_submission), crm_calls(call_id, account_id, timestamp, call_type, completed); complete 30-day events through run_date with explicit CRM completeness. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Comparison event, valid demo form submission and complete post-demo CRM call history.",
+    "acceptance": "Require independently originated comparison and demo event IDs for the same account. At least one demo must have no subsequent completed discovery call by run time. Deduplicate CRM copies and require complete activity coverage for the exclusion.",
+    "pitfalls": "Multiple systems can record one underlying event and look like corroboration.",
+    "gtm_use_case": "Unworked high-interest account routing",
+    "source_basis": "original",
+    "source_ids": [
+      "A11"
+    ],
+    "source_urls": [
+      "https://documentation.g2.com/docs/pt/buyer-intent"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-118",
+    "query": "Using the supplied complete website history, find companies headquartered in Australia with at least four human sessions in the last seven days after zero human sessions in the immediately preceding 30 days.",
+    "family": "Website engagement",
+    "complexity": "L3",
+    "industry": "Cross-industry",
+    "geography": "Australia",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "session_count",
+      "historical_absence"
+    ],
+    "signal_tags": [
+      "engagement_acceleration"
+    ],
+    "time_window": "last 7 days versus immediately preceding 30 days",
+    "logic": "THRESHOLD",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus web_sessions(session_id, account_id, starts_at, is_bot), coverage(account_id, interval_start, interval_end, tracking_complete, identity_complete); continuous 37-day coverage manifest. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Four session IDs in recent window plus complete historical coverage manifest.",
+    "acceptance": "Count human sessions in (run_timestamp minus 7 days, run_timestamp] and require zero in (run_timestamp minus 37 days, run_timestamp minus 7 days]. Complete instrumentation and stable identity coverage are required to establish zero.",
+    "pitfalls": "New tracking deployment can look like reactivation.",
+    "gtm_use_case": "Reactivated-account prospecting",
+    "source_basis": "original",
+    "source_ids": [
+      "A12"
+    ],
+    "source_urls": [
+      "https://www.reddit.com/r/sales/comments/1reb55s/is_intent_data_for_leads_still_working_for_you_or/"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-119",
+    "query": "Using the supplied partner directory and website referrer logs, find companies headquartered in the United Kingdom where at least two distinct verified employees reached our website from a current integration partner’s domain during the last 14 days.",
+    "family": "Website engagement",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "United Kingdom",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "referrer_relationship",
+      "visitor_count"
+    ],
+    "signal_tags": [
+      "partner_referral"
+    ],
+    "time_window": "last 14 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus web_events(event_id, person_key, account_id, timestamp, referrer_domain, is_bot), partners(partner_company_id, domains, valid_from, valid_to), employment(person_key, account_id, valid_from, valid_to); verified 14-day referrals and complete partner registry. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Two visitor identities, referrer registrable domains, partner validity dates and employer mapping.",
+    "acceptance": "Partner must be active when referral occurs; exclude visitors employed by the referring partner and self-referrals; return referred account.",
+    "pitfalls": "Referral URLs can be spoofed or lost through redirects.",
+    "gtm_use_case": "Ecosystem-assisted selling",
+    "source_basis": "original",
+    "source_ids": [
+      "A01"
+    ],
+    "source_urls": [
+      "https://www.avina.io/"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  },
+  {
+    "id": "CSB-120",
+    "query": "Using the supplied product analytics, support cases and contracts, find customers headquartered in the United States whose number of distinct active product users fell by at least 40% in the last complete 28-day period versus the preceding 28 days, with at least ten active users in the earlier period and at least two unresolved high-severity support cases opened in the last 30 days.",
+    "family": "Customer retention",
+    "complexity": "L4",
+    "industry": "Cross-industry",
+    "geography": "United States",
+    "geography_basis": "HQ",
+    "size_band": "unconstrained",
+    "business_model": "unconstrained",
+    "filter_tags": [
+      "headquarters",
+      "customer_status",
+      "active_user_decline",
+      "baseline_minimum",
+      "support_severity"
+    ],
+    "signal_tags": [
+      "usage_decline",
+      "unresolved_support"
+    ],
+    "time_window": "last complete 28 days versus preceding 28 days; cases last 30 days",
+    "logic": "JOIN",
+    "track": "supplied_data",
+    "fixture": "Required, not yet supplied: identical synthetic or authorized data snapshot for every provider, frozen at run_date; accounts(account_id, canonical_domain, parent_group_id, domain_aliases, HQ_country, industry, employee_count, as_of), plus product_events(event_id, user_key, account_id, timestamp, counts_as_active), support_cases(case_id, account_id, opened_at, severity, resolved_at, duplicate_of), contracts(account_id, paid, starts_at, ends_at), severity_dictionary; complete 56-day telemetry and current 30-day support state. All timestamps UTC; exclude future records; use event-time company attribution; unknown coverage is not a negative.",
+    "evidence": "Distinct user counts in two disjoint windows, active contract and two currently unresolved severity-qualified case IDs.",
+    "acceptance": "Compute decline as 1-recent/prior; require prior>=10, decline>=0.4, current paid customer and two distinct cases; severity mapping fixed in fixture.",
+    "pitfalls": "Seasonality, team shutdowns or instrumentation failures can mimic churn risk.",
+    "gtm_use_case": "Customer-health triage",
+    "source_basis": "original",
+    "source_ids": [
+      "A04"
+    ],
+    "source_urls": [
+      "https://www.avina.io/signals-library/shadow-it-and-bottom-up-adoption"
+    ],
+    "retirement_reason": "Requires supplied first-party or licensed data; excluded from the public-web release.",
+    "retired_in": "2.0.0"
+  }
+]
