@@ -676,7 +676,11 @@ const categoryNames = {V:'valid_companies',I:'invalid_companies',U:'unknown_comp
 const verdicts = {V:'valid',I:'invalid',U:'unknown',N:'unknown',E:'error',D:'duplicate',M:'malformed'};
 const ignoredFacets = new Set(['id','index','query','conditions','rule','acceptance','reference','evidence','pitfalls','gtm_use_case','source_urls','source_ids','fixture','logic','verification_limitations','facets']);
 const providerColors = {'Avina':'#805AD5','Exa':'#8D6FC3','Parallel':'#E49489','OpenAI':'#718096','Anthropic':'#DC8DAE','Google':'#B37DC7','xAI':'#4A5568'};
-const technologyNames = ['HubSpot','Salesforce','Snowflake','Databricks','Shopify','WooCommerce','Magento','BigCommerce','Stripe','Cloudflare','AWS','Azure','Google Cloud','Workday','NetSuite','SAP','Oracle','Zendesk','Intercom','Segment','Vercel','Kubernetes','Docker','PostgreSQL','MongoDB','React','Next.js','Webflow','WordPress','Marketo','Pardot','Braze','Amplitude','Mixpanel','Okta','Auth0','ServiceNow','Gong','Outreach'];
+const technologyNames = ['HubSpot','Salesforce','Salesforce Sales Cloud','Snowflake','Databricks','dbt','BigQuery','Google BigQuery','Shopify','Shopify Plus','WooCommerce','Magento','Adobe Commerce','BigCommerce','Stripe','Cloudflare','AWS','Azure','Microsoft Azure','Google Cloud','Workday','NetSuite','SAP','SAP Business One','SAP ECC','SAP S/4HANA','Oracle','Oracle OPERA Cloud','Zendesk','Intercom','Segment','Vercel','Kubernetes','Docker','PostgreSQL','MongoDB','React','Next.js','Webflow','WordPress','Marketo','Adobe Marketo Engage','Pardot','Braze','Amplitude','Mixpanel','Okta','Auth0','ServiceNow','Gong','Outreach','Klaviyo','Bullhorn','Epic','MyChart','VMware','NVIDIA','Contentful','Toast','Elasticsearch','Meta advertising pixel'];
+// Technology facets describe named tools, so substrings in unrelated words are
+// not matches: React is not a reactor, and AWS is not part of a lawsuit.
+const technologyPatterns = technologyNames.map(name=>[name,new RegExp(
+  `(?:^|[^a-z0-9])${name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}(?=$|[^a-z0-9])`,'i')]);
 
 const finite = value => typeof value === 'number' && Number.isFinite(value);
 const ratio = (a,b) => finite(a) && finite(b) && b > 0 ? a/b : null;
@@ -867,7 +871,7 @@ function validateInput(input, isReport) {
 function queryFacets(query) {
   const result = Object.fromEntries(Object.entries(query).filter(([key,value]) => !ignoredFacets.has(key) &&
     (['string','number','boolean'].includes(typeof value) || Array.isArray(value) && value.every(x => ['string','number','boolean'].includes(typeof x)))));
-  const technology = technologyNames.filter(name => (query.query ?? '').toLowerCase().includes(name.toLowerCase()));
+  const technology = technologyPatterns.filter(([,pattern])=>pattern.test(query.query ?? '')).map(([name])=>name);
   return {...result,...query.facets,technology:query.technology ?? query.facets?.technology ?? technology};
 }
 

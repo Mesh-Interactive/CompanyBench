@@ -22,6 +22,25 @@ test('filters OR selected values within a facet and AND across facets', () => {
   assert.ok(facetOptions(data).signal_tags.length > 1);
 });
 
+test('derived technology facets match complete names and preserve explicit facets', () => {
+  const fixture = normalizeDataset({meta:{synthetic:true},providers:[{id:'p',label:'Provider'}],
+    judges:[{id:'llm'}],rows:[],queries:[
+      {id:'false',query:'Find nuclear reactors and companies involved in lawsuits.'},
+      {id:'true',query:'Find companies using React, AWS, dbt, Google BigQuery, VMware, NVIDIA, Shopify Plus and Next.js.'},
+      {id:'escaped',query:'Find websites using NextXjs.'},
+      {id:'explicit',query:'Find companies using AWS.',technology:['Custom technology']},
+      {id:'explicit-facet',query:'Find companies using AWS.',facets:{technology:['Another tool']}},
+    ]});
+  assert.deepEqual(fixture.queries[0].facets.technology,[]);
+  for (const name of ['React','AWS','dbt','BigQuery','VMware','NVIDIA','Shopify Plus','Next.js']) {
+    assert.ok(fixture.queries[1].facets.technology.includes(name),`${name} should be recognized`);
+  }
+  assert.deepEqual(fixture.queries[2].facets.technology,[]);
+  assert.deepEqual(fixture.queries[3].facets.technology,['Custom technology']);
+  assert.deepEqual(fixture.queries[4].facets.technology,['Another tool']);
+  assert.ok(data.queries.find(q=>q.id==='CSB-129').facets.technology.includes('dbt'));
+});
+
 test('duplicates, malformed positions and unknowns retain denominator without credit', () => {
   const row = {query_id: 'x', provider: 'p', requested_count: 5, returned_companies: 5,
     categories: {llm: 'VVDMU'}, cost_usd: 2, latency_seconds: 10, search_status: 'completed'};
