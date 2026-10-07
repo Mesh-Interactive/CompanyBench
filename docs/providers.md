@@ -1,4 +1,4 @@
-# Providers and named systems
+# Providers and settings
 
 CompanyBench compares configured products, including each model, effort and native
 research workflow. It does not claim that identically named effort settings are

@@ -4,15 +4,36 @@ An open benchmark for **company list building**: given a search query, which com
 does a system return, how many satisfy the requirements, and what does the useful list
 cost in money and time?
 
-CompanyBench includes **250 public-web queries**, **14 named search configurations**, and
-**three judging backends**. It runs locally with a Python CLI, saves resumable artifacts,
-and produces inspectable HTML, JSON, CSV, and Markdown reports.
+CompanyBench includes **250 public-web queries**, search adapters for Avina, Exa, Parallel,
+and foundational models, and **three judging options**. Fourteen predefined combinations
+of providers and settings are included. It runs locally with a Python CLI, saves resumable
+artifacts, and produces inspectable HTML, JSON, CSV, and Markdown reports.
 
 **Status:** this repository contains the catalogue and benchmark implementation, not measured
 provider rankings. Adapters have offline contract tests; they have not been live-verified.
 Avina's adapter follows a draft API contract whose deployment still needs verification.
 
-## Try it without API keys
+## Example queries
+
+These are actual catalogue entries. L1–L4 describe increasing complexity; they are authored
+labels, not measured difficulty scores.
+
+| ID | Complexity | Query |
+|---|---|---|
+| `CSB-001` | L1 · Basic filters | Find B2B SaaS companies headquartered in the United States. |
+| `CSB-002` | L2 · Multiple filters | Find marketing agencies headquartered in the United Kingdom with 11–50 employees. |
+| `CSB-129` | L3 · Technology evidence | Find financial-services companies that publicly describe Snowflake and dbt operating together in their production analytics stack. |
+| `CSB-064` | L4 · Ordered events | Find B2B software companies headquartered in the United States that closed a Series A round in the last 180 days and then advertised their explicitly stated first Head of Finance role within 60 days after that close. |
+
+Each query has acceptance criteria, evidence requirements, and classification fields.
+Download the complete [CSV, JSON, or XLSX catalogue](catalogue/README.md), or inspect a case
+after installation:
+
+```bash
+companybench queries --id CSB-064 --full
+```
+
+## Install
 
 Requires Python 3.11 or later.
 
@@ -23,24 +44,79 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[dev]'
 companybench validate
+```
+
+With [uv](https://docs.astral.sh/uv/), use `uv sync --extra dev`, then prefix commands with
+`uv run`. Windows activation instructions and the full setup guide are in the
+[quickstart](docs/quickstart.md).
+
+## Run a small real benchmark
+
+This example uses Exa Agent High to search three queries, requesting up to ten companies
+per query. OpenAI independently researches the results and runs the default LLM judge.
+Both API keys are required. **The benchmark makes paid API calls.**
+
+```bash
+export EXA_API_KEY="your-exa-api-key"
+export OPENAI_API_KEY="your-openai-api-key"
+
+# Preview the selected queries, settings, and cost assumptions without API calls.
+companybench run --provider exa-agent-high --sample 3 --seed 42 \
+  --target-count 10 --output runs/first-run --dry-run
+
+# Run search, research, grading, and reporting.
+companybench run --provider exa-agent-high --sample 3 --seed 42 \
+  --target-count 10 --output runs/first-run
+```
+
+Open the printed `report.html` path to inspect the results. The dry-run estimate does not
+include the full research and judging bill. Endpoint and model access still need live
+verification; see [provider compatibility](docs/providers.md).
+
+The [quickstart](docs/quickstart.md) is the complete running guide: credentials, multiple
+providers, all 250 queries, resume, regrading, and publication. Choose providers explicitly;
+removing query selectors selects the entire catalogue.
+
+### Try it without API keys
+
+```bash
 companybench demo --output runs/demo
 ```
 
-Open the printed `report.html` path. The demo uses invented companies, evidence, prices,
-and timings; it makes no API calls. With [uv](https://docs.astral.sh/uv/), use
-`uv sync --extra dev`, then prefix commands with `uv run`.
+The offline demo uses invented companies, evidence, prices, and timings. It makes no API
+calls and prints an HTML report path.
 
-Inspect a real run before paying for it:
+## Explore query segments
+
+Use `--segment` with `queries` to inspect a subset or with `run` to benchmark it. A few
+available segments:
+
+| Segment | What it selects |
+|---|---|
+| `simple` | Basic filters: L1 queries |
+| `complex` | Specialist evidence and compound requirements: L3 and L4 queries |
+| `technographic` | Requirements about technologies a company uses |
+| `ai_companies` | AI vendor searches; currently two queries |
+| `manufacturing` | Manufacturing industry queries |
+| `signals` | Date-sensitive requirements, including recent events and dated financial evidence |
 
 ```bash
-companybench queries --segment manufacturing --sample 5 --seed 42
-companybench run --provider exa-agent-high --provider parallel-core \
-  --segment manufacturing --sample 5 --seed 42 --dry-run
+companybench queries --segment technographic --sample 5 --seed 42
+companybench queries --segment ai_companies
+companybench run --provider exa-agent-high --segment manufacturing \
+  --sample 3 --seed 42 --target-count 10 --dry-run
 ```
 
-The [quickstart](docs/quickstart.md) covers credentials, a paid pilot, all 250 queries,
-selection, resume, regrading, and publication. Choose providers explicitly; removing
-query selectors selects the entire catalogue.
+Combine segments with filters for narrower subsets, such as simple manufacturing queries:
+
+```bash
+companybench queries --segment manufacturing --where 'complexity == "L1"'
+```
+
+Selection also supports stable IDs, inclusive index ranges, explicit index lists, and
+seeded sampling. See the [complete filtering guide](docs/dataset.md#selection-and-custom-datasets) for all
+segments, fields, and intersections. The [research ledger](docs/sources.md) records the
+sources of query ideas.
 
 ## What it measures
 
@@ -56,15 +132,16 @@ valid yield while penalizing filler; a separate cost efficiency score includes s
 have no known complete denominator. See the [methodology](docs/methodology.md) for formulas,
 uncertainty, failed runs, and aggregation.
 
-Filter results by complexity, industry, geography, query family, filters, signals, or custom
-metadata. Selection supports stable IDs, inclusive index ranges, explicit index lists, safe
-filter expressions, and seeded sampling. The [catalogue guide](docs/dataset.md) explains
-the taxonomy and [research ledger](docs/sources.md) records the sources of query ideas.
-Download the complete [CSV, JSON, or XLSX catalogue](catalogue/README.md).
+Reports can be filtered by the same query segments and metadata fields.
 
-## Search configurations
+## Providers and settings
 
-| Preset | System |
+A configuration means a specific provider with fixed settings, including its model and
+effort level where applicable. For example, Exa Agent High and Exa Agent Auto are two
+configurations because their settings can affect quality, cost, and time. Use the name in
+the first column with `--provider`.
+
+| CLI name | Provider and settings |
 |---|---|
 | `avina` | Avina company signal search |
 | `exa-websets` | Exa Websets |
