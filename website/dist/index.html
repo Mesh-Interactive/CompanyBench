@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore company search quality, cost, and speed. CompanyBench's initial interface uses clearly labeled synthetic data.">
+  <meta name="theme-color" content="#f9fafb">
+  <title>CompanyBench — Company search, measured.</title>
+  <link rel="icon" href="./assets/avina-mark.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to results</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#overview" aria-label="CompanyBench overview">
+        <img src="./assets/avina-mark.png" alt="" width="30" height="30">
+        <span>CompanyBench<small>by Avina</small></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <button data-page="overview" class="nav-link active">Overview</button>
+        <button data-page="compare" class="nav-link">Compare</button>
+        <button data-page="queries" class="nav-link">Query results</button>
+        <button data-page="methodology" class="nav-link">Methodology</button>
+      </nav>
+      <div class="header-actions">
+        <a class="quiet-link github-link" href="https://github.com/Mesh-Interactive/CompanyBench" target="_blank" rel="noopener">GitHub ↗</a>
+        <button class="button small" data-action="share">Copy view link</button>
+        <details class="download-menu">
+          <summary class="button small">Download data ↓</summary>
+          <div class="menu-panel">
+            <button data-action="export-csv">Filtered results · CSV</button>
+            <button data-action="export-json">Current dataset · JSON</button>
+            <label class="file-label">Load a report JSON<input id="load-report" type="file" accept=".json,application/json"></label>
+            <button data-action="demo">Restore synthetic preview</button>
+          </div>
+        </details>
+      </div>
+    </div>
+  </header>
+  <div class="data-notice" id="data-notice" role="status">
+    <span class="notice-dot"></span><strong>Synthetic data</strong>
+    <span>Interface preview. These are invented results, not provider measurements.</span>
+  </div>
+  <main id="main" tabindex="-1">
+    <section class="intro">
+      <div>
+        <p class="eyebrow">AN OPEN BENCHMARK FOR COMPANY LIST BUILDING</p>
+        <h1 id="page-title">Company search, measured.</h1>
+        <p class="intro-copy" id="page-description">Find the right search provider for the list you need.<br>Explore quality, cost, and speed, then inspect every company.</p>
+      </div>
+      <div class="release-note">
+        <span class="badge purple" id="release-label">Synthetic preview</span>
+        <p id="release-summary">250 queries · 14 provider setups<br>50 requested companies · 1 trial</p>
+        <a href="https://github.com/Mesh-Interactive/CompanyBench/tree/main/catalogue" target="_blank" rel="noopener">View the query catalogue ↗</a>
+      </div>
+    </section>
+    <div id="headline-results"></div>
+    <section class="control-panel" aria-label="Comparison controls" id="controls">
+      <div class="filter-line">
+        <div class="filter-buttons" id="filter-buttons"></div>
+        <button class="button ghost" data-action="all-filters">All filters <span id="filter-count"></span></button>
+        <div class="query-count" id="query-count">Loading queries…</div>
+        <button class="text-button" data-action="reset-filters">Reset</button>
+      </div>
+      <div id="active-filters" class="active-filters"></div>
+      <div class="comparison-line">
+        <label class="control-label">Metric <select id="metric-select" aria-label="Metric"></select></label>
+        <label class="control-label">Judge <select id="judge-select" aria-label="Judge"></select></label>
+        <span class="formula-note" id="metric-note"></span>
+        <button class="text-button" data-action="metric-help">How is this calculated?</button>
+      </div>
+    </section>
+    <div class="provider-selector">
+      <div class="section-line compact">
+        <span class="muted">Emphasize providers</span>
+        <div><button class="text-button" data-action="select-all">All</button><span class="muted"> / </span><button class="text-button" data-action="select-none">None</button></div>
+        <span class="muted small-copy">Unselected providers stay visible, faded.</span>
+      </div>
+      <div class="provider-chips" id="provider-chips"></div>
+    </div>
+    <div id="content" aria-live="polite"><div class="loading-card">Loading the results explorer…</div></div>
+    <footer>
+      <div class="footer-brand"><img src="./assets/avina-mark.png" width="22" height="22" alt=""><span>CompanyBench <span class="muted">by Avina / Mesh Interactive</span></span></div>
+      <p>Open source. Inspectable results. Authorship and commercial interest disclosed.</p>
+      <a href="https://github.com/Mesh-Interactive/CompanyBench/blob/main/docs/corrections.md" target="_blank" rel="noopener">Challenge a result ↗</a>
+    </footer>
+  </main>
+  <div id="popover-root"></div>
+  <dialog id="detail-dialog" class="drawer" aria-labelledby="drawer-title">
+    <div id="drawer-content"></div>
+  </dialog>
+  <dialog id="filter-dialog" class="filter-dialog" aria-labelledby="filters-title">
+    <header class="drawer-header"><div><p class="eyebrow">BUILD YOUR COMPARISON</p><h2 id="filters-title">Filter queries</h2></div><button class="icon-button" data-action="close-filters" aria-label="Close filters">×</button></header>
+    <p class="filter-explanation">Selections within a field use <strong>OR</strong>. Different fields use <strong>AND</strong>.</p>
+    <label class="search-input">Find a filter<input id="filter-search" type="search" placeholder="Industry, geography, technologies…" aria-label="Find a filter"></label>
+    <div id="all-filter-fields" class="all-filter-fields"></div>
+    <div class="drawer-footer"><span id="filter-match-count"></span><button class="button primary" data-action="close-filters">View results</button></div>
+  </dialog>
+  <dialog id="metric-dialog" class="metric-dialog" aria-labelledby="metric-help-title">
+    <div id="metric-help-content"></div>
+  </dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

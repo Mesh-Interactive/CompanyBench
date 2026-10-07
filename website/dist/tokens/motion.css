@@ -1,0 +1,24 @@
+/* ── Motion ───────────────────────────────────────────────────────────
+   Short, small-travel, mostly opacity + 4–16px of Y. Presses scale to 0.95;
+   cards lift 1px. Nothing bounces. */
+:root{
+  --duration-fast:0.15s; /* @kind other */
+  --duration-base:0.2s; /* @kind other */
+  --duration-slow:0.3s; /* @kind other */
+  --duration-fade:0.5s; /* @kind other */
+  --ease-standard:ease; /* @kind other */
+  --ease-out:cubic-bezier(0.4,0,0.2,1); /* @kind other */
+  --ease-apple:cubic-bezier(0.16,1,0.3,1); /* @kind other */
+  --press-scale:0.95; /* @kind other */
+  --hover-lift:translateY(-1px); /* @kind other */
+  --hover-grow:scale(1.005); /* @kind other */
+}
+@keyframes avina-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes avina-fade-in-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes avina-fade-out{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(0.5)}}
+@keyframes avina-shimmer{0%{opacity:0.4}50%{opacity:1}100%{opacity:0.4}}
+@keyframes avina-text-shimmer{from{background-position:100% 0%}to{background-position:-100% 0%}}
+@keyframes avina-pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(214,188,250,0);border-color:rgba(214,188,250,0.4)}50%{box-shadow:0 0 1px 2px rgba(214,188,250,0.55);border-color:rgba(159,122,234,0.6)}}
+@keyframes avina-pulse-ring{0%{transform:scale(1);opacity:0.8}50%{transform:scale(3);opacity:0}100%{transform:scale(1);opacity:0}}
+@keyframes avina-spin{to{transform:rotate(360deg)}}
+@keyframes avina-glow-rotate{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}

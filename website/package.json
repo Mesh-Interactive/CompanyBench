@@ -1,0 +1,11 @@
+{
+  "name": "companybench-results-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CompanyBench's static, inspectable results explorer. Initial data is synthetic.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build": "python3 scripts/build-standalone.py"
+  }
+}

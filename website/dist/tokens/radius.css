@@ -1,0 +1,36 @@
+/* ── Corners, borders, elevation ──────────────────────────────────────
+   Radii are small and specific in the app (7–14px), rounder on the site
+   (16–20px) with pill buttons everywhere. Shadows are whisper-soft; depth
+   comes from hairline borders, not drop shadows. */
+:root{
+  --radius-xs:4px;
+  --radius-sm:7px;
+  --radius-md:8px;      /* buttons */
+  --radius-lg:10px;     /* inputs, page panels, tiles */
+  --radius-xl:12px;     /* cards, modals */
+  --radius-2xl:14px;    /* command bar */
+  --radius-pill:999px;
+  --radius-site-card:17px;
+  --radius-site-panel:20px;
+  --radius-site-search:18px;
+
+  --border-hairline:1px solid rgba(0,0,0,0.06); /* @kind other */
+  --border-panel:1px solid rgba(0,0,0,0.07); /* @kind other */
+  --border-card:1px solid #e2e8f0; /* @kind other */
+  --border-button:1px solid #e9eaecdf; /* @kind other */
+
+  --shadow-button:0px 2px 4px rgba(0,0,0,0.02);
+  --shadow-button-solid:0px 2px 4px rgba(0,0,0,0.1);
+  --shadow-tile:0 1px 3px rgba(0,0,0,0.04);
+  --shadow-tile-hover:0 2px 6px rgba(0,0,0,0.06);
+  --shadow-card:0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow-popover:0 2px 7px -1px rgba(0,0,0,0.07);
+  --shadow-menu:rgba(0,0,0,0.1) 0px 10px 15px -3px;
+  --shadow-nav-overlay:4px 0 16px rgba(0,0,0,0.07);
+  --shadow-site-search:0 8px 32px -8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.1);
+  --shadow-site-popover:0 8px 32px rgba(0,0,0,0.4);
+
+  --blur-nav:blur(10px); /* @kind other */
+  --blur-popover:blur(16px); /* @kind other */
+  --blur-modal:blur(5px); /* @kind other */
+}

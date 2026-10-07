@@ -1,0 +1,27 @@
+/* ── Spacing ──────────────────────────────────────────────────────────
+   The app is dense: 4px base step, page gutters of 18–25px, cards at 16px.
+   The marketing site breathes: 3–8rem section rhythm. */
+:root{
+  --space-0:0px;--space-1:2px;--space-2:4px;--space-3:6px;--space-4:8px;
+  --space-5:10px;--space-6:12px;--space-7:14px;--space-8:16px;--space-9:18px;
+  --space-10:20px;--space-12:25px;--space-14:30px;--space-16:32px;--space-20:40px;
+
+  --page-gutter:25px;         /* list page horizontal padding */
+  --page-header-pad:10px 12px 10px 18px;
+  --card-pad:16px;
+  --card-gap:10px;            /* vertical gap between list cards */
+  --grid-gap:16px;            /* signal card grid */
+  --nav-pad:13px 17px;
+  --nav-width:220px;
+  --nav-width-collapsed:70px;
+  --sidebar-pad:18px;
+
+  /* Marketing section rhythm (globals.css) */
+  --section-py-sm:3rem;--section-py:4rem;--section-py-lg:5rem;
+  --site-container:1350px;
+  --site-container-medium:64rem;
+  --site-container-small:48rem;
+}
+@media screen and (min-width:768px){
+  :root{--section-py-sm:4rem;--section-py:6rem;--section-py-lg:8rem}
+}

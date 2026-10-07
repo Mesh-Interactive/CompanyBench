@@ -33,6 +33,21 @@ after installation:
 companybench queries --id CSB-064 --full
 ```
 
+## Results explorer
+
+The [interactive site](website/README.md) presents quality, cost, and search time, with
+shared filters, provider comparisons, and company-level evidence inspection. Its initial
+data is **synthetic**, not measured benchmark results. It can also load a saved CompanyBench
+report locally in your browser.
+
+Open the self-contained [preview](website/preview.html) after downloading it, or serve the site:
+
+```bash
+python3 -m http.server 8000 --directory website/dist --bind 127.0.0.1
+```
+
+Then open `http://localhost:8000`. No frontend build or API keys are required.
+
 ## Install
 
 Requires Python 3.11 or later.

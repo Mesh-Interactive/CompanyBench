@@ -7,5 +7,5 @@ __pycache__/
 .mypy_cache/
 .env
 runs/
-dist/
+/dist/
 *.egg-info/

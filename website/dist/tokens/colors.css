@@ -1,0 +1,90 @@
+/* ── Avina color system ───────────────────────────────────────────────
+   Base scales first, semantic aliases after. The product (app.avina.io) is a
+   light surface built on Chakra's purple + gray scales; the marketing site
+   (avina.io) is a soft-dark surface on #181818 with purple/coral gradients. */
+:root{
+  /* Brand purple — Chakra `purple` scale, the product's accent */
+  --purple-50:#faf5ff;--purple-100:#e9d8fd;--purple-200:#d6bcfa;--purple-300:#b794f4;
+  --purple-400:#9f7aea;--purple-500:#805ad5;--purple-600:#6b46c1;--purple-700:#553c9a;
+  --purple-800:#44337a;--purple-900:#322659;
+  /* Hover/active purple used literally throughout the app code */
+  --purple-hover:#8a64de;
+  --purple-tint-06:#8a64de10;/* ghost hover wash */
+  --purple-tint-12:#8a64de20;/* faded button fill */
+  --purple-tint-19:#8a64de30;/* faded button hover */
+  --purple-border-31:#8a64de50;
+  --purple-border-44:#8a64de70;
+
+  /* Neutrals — Chakra `gray` scale */
+  --gray-50:#f7fafc;--gray-100:#edf2f7;--gray-200:#e2e8f0;--gray-300:#cbd5e0;
+  --gray-400:#a0aec0;--gray-500:#718096;--gray-600:#4a5568;--gray-700:#2d3748;
+  --gray-800:#1a202c;--gray-900:#171923;
+  --app-canvas:#f9fafb;      /* app shell + sidebar background */
+  --hairline:rgba(0,0,0,0.06);
+  --hairline-strong:rgba(0,0,0,0.09);
+  --card-border:#e2e8f0;
+  --button-border:#e9eaecdf;
+  --placeholder:rgb(160,170,180);
+  --text-muted-rgb:rgb(120,130,140);
+  --text-subtle-rgb:rgb(105,107,109);
+  --text-crumb:rgb(107,115,132);
+
+  /* Signal palette — the five hues signal chips, quick actions and grid
+     renderers rotate through (src/theme/signalColors.ts) */
+  --signal-purple:#8d6fc3;--signal-purple-bg:rgba(141,111,195,0.15);
+  --signal-violet:#b37dc7;--signal-violet-bg:rgba(179,125,199,0.15);
+  --signal-rose:#dc8dae;  --signal-rose-bg:rgba(220,141,174,0.15);
+  --signal-pink:#df90a7;  --signal-pink-bg:rgba(223,144,167,0.15);
+  --signal-coral:#e49489; --signal-coral-bg:rgba(228,148,137,0.15);
+
+  /* Status */
+  --green-50:#f0fff4;--green-400:#48bb78;--green-500:#38a169;--green-600:#2f855a;
+  --red-50:#fff5f5;--red-300:#feb2b2;--red-400:#fc8181;--red-500:#e53e3e;--red-600:#c53030;
+  --yellow-50:#fffff0;--yellow-500:#d69e2e;--yellow-600:#b7791f;
+  --orange-400:#ed8936;
+
+  /* Marketing surface (avina.io) */
+  --site-bg:#181818;
+  --site-surface:#1a1a1a;
+  --site-surface-border:#2e2e2e;
+  --site-card:rgba(255,255,255,0.03);
+  --site-card-strong:rgba(255,255,255,0.08);
+  --site-card-border:rgba(255,255,255,0.06);
+  --site-card-border-hover:rgba(255,255,255,0.12);
+  --site-heading:#ac84ec;
+  --site-heading-bright:#dfb8ff;
+  --site-lilac:#9f84cb;
+  --site-violet:#a882ff;
+  --site-focus:#4d65ff;
+  --site-text:rgba(255,255,255,0.9);
+  --site-text-muted:rgba(255,255,255,0.7);
+  --site-text-dim:rgba(255,255,255,0.35);
+
+  /* Gradients */
+  --gradient-hero:linear-gradient(105.97deg,#7c5fbb,#9778c7 24%,#eea8e7 51%,#f0979e 75%,#f9a075); /* @kind color */
+  --gradient-purple:linear-gradient(123deg,#9f84cb,#d997ff); /* @kind color */
+  --gradient-warm:linear-gradient(135deg,#ff7448,#ff4848 50%,#6248ff); /* @kind color */
+  --gradient-signal-glow:linear-gradient(90deg,#8d6fc3,#b37dc7,#dc8dae,#e49489,#dc8dae,#b37dc7,#8d6fc3); /* @kind color */
+  --gradient-search-card:linear-gradient(165deg,#434343dd 0%,#383838dd 100%); /* @kind color */
+
+  /* ── Semantic aliases ── */
+  --text-body:var(--gray-700);
+  --text-heading:var(--gray-800);
+  --text-secondary:var(--gray-500);
+  --text-tertiary:var(--gray-400);
+  --text-accent:var(--purple-500);
+  --text-inverse:#fff;
+  --surface-page:var(--app-canvas);
+  --surface-card:#fff;
+  --surface-raised:#fff;
+  --surface-sunken:var(--gray-50);
+  --surface-accent-wash:var(--purple-50);
+  --border-default:var(--card-border);
+  --border-subtle:var(--hairline);
+  --border-accent:var(--purple-500);
+  --focus-ring:var(--purple-500);
+  --status-active:var(--green-500);
+  --status-error:var(--red-500);
+  --status-warning:var(--orange-400);
+  --status-neutral:var(--gray-400);
+}
