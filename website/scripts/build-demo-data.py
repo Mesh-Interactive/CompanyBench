@@ -199,7 +199,7 @@ def main() -> None:
         "meta": {
             "schema_version": "1.0",
             "synthetic": True,
-            "title": "CompanyBench · synthetic preview",
+            "title": "CompanyBench synthetic preview",
             "disclosure": "All performance results, companies, costs, times and judgments are invented. They are not provider measurements or real company claims.",
             "dataset_version": "2.0.0",
             "reference_time": "2026-10-06T00:00:00Z",

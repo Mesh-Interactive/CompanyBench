@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Explore company search quality, cost, and speed. CompanyBench's initial interface uses clearly labeled synthetic data.">
+  <meta name="description" content="Compare company search providers by valid companies found, precision, cost, and search time. Preview uses synthetic data.">
   <meta name="theme-color" content="#f9fafb">
-  <title>CompanyBench — Company search, measured.</title>
+  <title>CompanyBench: Company search benchmark results</title>
   <link rel="icon" href="./assets/avina-mark.png">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to results</a>
+  <a class="skip-link" href="#main" data-action="skip-to-results">Skip to results</a>
   <header class="site-header">
     <div class="header-inner">
       <a class="brand" href="#overview" aria-label="CompanyBench overview">
@@ -19,7 +19,7 @@
       </a>
       <nav aria-label="Main navigation">
         <button data-page="overview" class="nav-link active">Overview</button>
-        <button data-page="compare" class="nav-link">Compare</button>
+        <button data-page="compare" class="nav-link">Providers</button>
         <button data-page="queries" class="nav-link">Query results</button>
         <button data-page="methodology" class="nav-link">Methodology</button>
       </nav>
@@ -29,9 +29,9 @@
         <details class="download-menu">
           <summary class="button small">Download data ↓</summary>
           <div class="menu-panel">
-            <button data-action="export-csv">Filtered results · CSV</button>
-            <button data-action="export-json">Current dataset · JSON</button>
-            <label class="file-label">Load a report JSON<input id="load-report" type="file" accept=".json,application/json"></label>
+            <button data-action="export-csv">Filtered results (CSV)</button>
+            <button data-action="export-json">Current dataset (JSON)</button>
+            <label class="file-label">Open a report<input id="load-report" type="file" accept=".json,application/json"></label>
             <button data-action="demo">Restore synthetic preview</button>
           </div>
         </details>
@@ -40,22 +40,17 @@
   </header>
   <div class="data-notice" id="data-notice" role="status">
     <span class="notice-dot"></span><strong>Synthetic data</strong>
-    <span>Interface preview. These are invented results, not provider measurements.</span>
+    <span>All results are invented for this preview.</span>
   </div>
   <main id="main" tabindex="-1">
     <section class="intro">
       <div>
-        <p class="eyebrow">AN OPEN BENCHMARK FOR COMPANY LIST BUILDING</p>
-        <h1 id="page-title">Company search, measured.</h1>
-        <p class="intro-copy" id="page-description">Find the right search provider for the list you need.<br>Explore quality, cost, and speed, then inspect every company.</p>
+        <h1 id="page-title">Company search benchmark results</h1>
       </div>
       <div class="release-note">
-        <span class="badge purple" id="release-label">Synthetic preview</span>
-        <p id="release-summary">250 queries · 14 provider setups<br>50 requested companies · 1 trial</p>
-        <a href="https://github.com/Mesh-Interactive/CompanyBench/tree/main/catalogue" target="_blank" rel="noopener">View the query catalogue ↗</a>
+        <p id="release-summary">250 queries, 14 provider configurations<br>50 companies requested per query, 1 trial</p>
       </div>
     </section>
-    <div id="headline-results"></div>
     <section class="control-panel" aria-label="Comparison controls" id="controls">
       <div class="filter-line">
         <div class="filter-buttons" id="filter-buttons"></div>
@@ -66,23 +61,22 @@
       <div id="active-filters" class="active-filters"></div>
       <div class="comparison-line">
         <label class="control-label">Metric <select id="metric-select" aria-label="Metric"></select></label>
-        <label class="control-label">Judge <select id="judge-select" aria-label="Judge"></select></label>
+        <label class="control-label">Evaluator <select id="judge-select" aria-label="Evaluator"></select></label>
         <span class="formula-note" id="metric-note"></span>
-        <button class="text-button" data-action="metric-help">How is this calculated?</button>
+        <button class="text-button" data-action="metric-help">Metric definition</button>
       </div>
     </section>
-    <div class="provider-selector">
+    <details class="provider-selector">
+      <summary>Providers <span id="selected-provider-count"></span> ⌄</summary>
       <div class="section-line compact">
-        <span class="muted">Emphasize providers</span>
-        <div><button class="text-button" data-action="select-all">All</button><span class="muted"> / </span><button class="text-button" data-action="select-none">None</button></div>
-        <span class="muted small-copy">Unselected providers stay visible, faded.</span>
+        <div><button class="text-button" data-action="select-all">Select all</button><button class="text-button" data-action="select-none">Deselect all</button></div>
       </div>
       <div class="provider-chips" id="provider-chips"></div>
-    </div>
-    <div id="content" aria-live="polite"><div class="loading-card">Loading the results explorer…</div></div>
+    </details>
+    <div id="content" aria-live="polite"><div class="loading-card">Loading results…</div></div>
     <footer>
       <div class="footer-brand"><img src="./assets/avina-mark.png" width="22" height="22" alt=""><span>CompanyBench <span class="muted">by Avina / Mesh Interactive</span></span></div>
-      <p>Open source. Inspectable results. Authorship and commercial interest disclosed.</p>
+      <p>Avina publishes this benchmark and has a commercial interest in the results.</p>
       <a href="https://github.com/Mesh-Interactive/CompanyBench/blob/main/docs/corrections.md" target="_blank" rel="noopener">Challenge a result ↗</a>
     </footer>
   </main>
@@ -91,8 +85,8 @@
     <div id="drawer-content"></div>
   </dialog>
   <dialog id="filter-dialog" class="filter-dialog" aria-labelledby="filters-title">
-    <header class="drawer-header"><div><p class="eyebrow">BUILD YOUR COMPARISON</p><h2 id="filters-title">Filter queries</h2></div><button class="icon-button" data-action="close-filters" aria-label="Close filters">×</button></header>
-    <p class="filter-explanation">Selections within a field use <strong>OR</strong>. Different fields use <strong>AND</strong>.</p>
+    <header class="drawer-header"><h2 id="filters-title">Query filters</h2><button class="icon-button" data-action="close-filters" aria-label="Close filters">×</button></header>
+    <p class="filter-explanation">Match any selected value within a field and every selected field.</p>
     <label class="search-input">Find a filter<input id="filter-search" type="search" placeholder="Industry, geography, technologies…" aria-label="Find a filter"></label>
     <div id="all-filter-fields" class="all-filter-fields"></div>
     <div class="drawer-footer"><span id="filter-match-count"></span><button class="button primary" data-action="close-filters">View results</button></div>

@@ -31,12 +31,14 @@ unavailable. The generated preview is an artifact; edit the source files under
 
 ## Explore a comparison
 
-- **Overview** presents the main quality, precision, cost and time results, then
-  highlights performance across query groups.
-- **Compare** ranks every provider configuration by the selected metric and
-  shows quality against cost or search time. Select providers to emphasize them;
-  other providers remain visible, faded. Emphasis does not change the queries
-  being evaluated.
+- **Overview** starts with quality score versus cost per valid company, beside
+  headline valid counts, precision, cost and search time. Provider rankings are
+  expandable. The query-group table shows results by complexity, industry or
+  search type.
+- **Providers** compares every provider configuration on the selected metric.
+  Expand **Providers** to select or deselect configurations; unselected providers
+  stay visible, faded. Select a chart point or ranking row to change its emphasis.
+  These choices do not change the queries being evaluated.
 - **Query results** shows one query per row and provider results in columns.
   Select a cell to open its result drawer, then expand a company to inspect its
   acceptance conditions, identity, judge reasons and captured sources.
@@ -48,6 +50,26 @@ fields combine with **AND**. Active filter chips and the query count show what i
 included. Reset clears query filters. Metric and judge controls apply to the
 same selected query group throughout the interface.
 
+Complexity classes use plain names throughout the interface:
+
+| Class | Requirements | Saved dataset code |
+|---|---|---|
+| Basic filters | Straightforward industry, location or company-type requirements. | L1 |
+| Multiple requirements | Several filters or a specific business description. | L2 |
+| Specific evidence | Dated events, numeric thresholds, specialist facts or relationships. | L3 |
+| Complex conditions | Combined relationships, event sequences or difficult exclusions. | L4 |
+
+Saved query codes and URL filter values remain unchanged. CSV downloads include
+both the code and its plain name. On small screens, **All filters** opens every
+query filter, and provider choices stay collapsed until expanded.
+
+**Quality score** measures list completeness and precision, from 0 to 100:
+`200 × valid companies / (returned positions + requested count)`. With 50
+requested, 25 valid out of 50 returned scores 50; 25 valid out of 25 scores 66.7.
+Cost is separate: **Valid companies per dollar** divides valid companies by search
+cost. Multiplying that ratio by cost returns the valid company count. Use the
+chart's help button for the score definition and examples.
+
 The download menu exports the filtered results as CSV or the current dataset as
 JSON. The share control copies a URL containing the current view selections.
 Use a hosted URL when sharing with other people; a local or file URL still points
@@ -55,7 +77,7 @@ to your own computer.
 
 ## Open measured results
 
-Use **Download data → Load a report JSON** and choose a JSON report produced by
+Use **Download data → Open a report** and choose a JSON report produced by
 `companybench report`. The file is read in the browser. Nothing is uploaded and
 no additional research or judging happens. The original synthetic fixture can
 be restored from the same menu.
@@ -86,8 +108,9 @@ exercise interface states, not to predict provider performance.
 `website` directory. No `npm install` is needed. Python 3.11+ runs the portable
 builder with its standard library; a modern Node.js runs the offline data tests.
 
-The interface uses native controls, visible keyboard focus, a skip link,
-keyboard-accessible comparisons and native dialogs. Result drawers support
+The interface uses styled dropdowns matching Avina's dashboard, visible keyboard
+focus, a skip link, keyboard-accessible comparisons and native dialogs. Dropdowns
+support arrow keys, Home, End, Enter, Escape and Tab. Result drawers support
 Escape and focus restoration. Small screens can scroll provider columns while
 retaining the query column, and drawers expand to the available screen width.
 Color accompanies names and numbers; it is not the only source of meaning.
@@ -104,7 +127,7 @@ do not grant contributors rights to present their own products as Avina.
 
 No proprietary ABC Diatype font files are included. Dinamo's
 [font license](https://abcdinamo.com/licenses) prohibits putting those files in
-public repositories. The site uses Geist, Inter and system font stacks instead;
+public repositories. The site uses Inter and system font stacks instead;
 the optional Google Fonts delivery has a system fallback. Third-party fonts and
 the Avina brand assets are not relicensed by CompanyBench's MIT license.
 CompanyBench's authored application code remains under the repository's

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import {filterQueries, facetOptions, getMetrics, summarize, getCompanies, normalizeDataset} from '../dist/data.js';
+import {filterQueries, facetOptions, getMetrics, summarize, getCompanies, normalizeDataset, COMPLEXITY_LEVELS, complexityLabel} from '../dist/data.js';
 
 const data = normalizeDataset(JSON.parse(fs.readFileSync(new URL('../dist/data/demo.json', import.meta.url))));
 
@@ -20,6 +20,28 @@ test('filters OR selected values within a facet and AND across facets', () => {
   assert.deepEqual(filterQueries(data, {facets: {industry: ['Unlisted industry']}}), []);
   assert.equal(filterQueries(data, {search: 'CSB-001'}).length, 1);
   assert.ok(facetOptions(data).signal_tags.length > 1);
+});
+
+test('plain complexity names preserve canonical query selections and unknown contributor values', () => {
+  assert.deepEqual(Object.values(COMPLEXITY_LEVELS).map(level=>level.label),
+    ['Basic filters','Multiple requirements','Specific evidence','Complex conditions']);
+  const expected = [27,71,118,34];
+  Object.keys(COMPLEXITY_LEVELS).forEach((code,index)=>{
+    assert.equal(filterQueries(data,{facets:{complexity:[code]}}).length,expected[index]);
+    assert.equal(complexityLabel(code),COMPLEXITY_LEVELS[code].label);
+    assert.ok(COMPLEXITY_LEVELS[code].description.length>20);
+  });
+  assert.equal(complexityLabel('Contributor-defined complexity'),'Contributor-defined complexity');
+});
+
+test('quality score measures list completeness and precision independently of cost', () => {
+  const row = {requested_count:50,returned_companies:50,categories:{llm:'V'.repeat(50)},cost_usd:5};
+  assert.equal(getMetrics(row).quality_score,100);
+  const half = {...row,categories:{llm:'V'.repeat(25)+'I'.repeat(25)}};
+  assert.equal(getMetrics(half).quality_score,50);
+  assert.ok(Math.abs(getMetrics({...half,returned_companies:25,categories:{llm:'V'.repeat(25)}}).quality_score-66.6666666667)<1e-8);
+  assert.equal(getMetrics({...row,cost_usd:500}).quality_score,100);
+  assert.equal(getMetrics(row).cost_usd*getMetrics(row).valid_companies_per_dollar,50);
 });
 
 test('derived technology facets match complete names and preserve explicit facets', () => {

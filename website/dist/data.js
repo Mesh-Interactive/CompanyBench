@@ -12,9 +12,18 @@ export const FACET_LABELS = {
   expected_count: 'Expected company count', satisfiability: 'Reference review',
 };
 
+// Keep release codes in saved data; show the requirements in the interface.
+export const COMPLEXITY_LEVELS = {
+  L1: {label:'Basic filters',description:'Industry, location, company type, or other straightforward requirements.'},
+  L2: {label:'Multiple requirements',description:'Several filters or a specific description of the company’s business.'},
+  L3: {label:'Specific evidence',description:'Dated events, numeric thresholds, specialist facts, or company relationships.'},
+  L4: {label:'Complex conditions',description:'Combined relationships, event sequences, or exclusions that need separate evidence.'},
+};
+export const complexityLabel = value => COMPLEXITY_LEVELS[value]?.label ?? String(value ?? 'Unspecified complexity');
+
 export const METRICS = [
   {id:'mean_valid_companies',label:'Valid companies found',unit:'companies',direction:'higher',formula:'Mean distinct valid companies per query',description:'Each company receives credit once. Duplicates, malformed results and missing evidence receive no credit.'},
-  {id:'quality_score',label:'Quality score',unit:'score',direction:'higher',formula:'200 × valid companies / (returned positions + requested count)',description:'Balances the number of valid companies with precision. Uses the eligible count for smaller exhaustive reference lists. Known empty cases are reported separately.'},
+  {id:'quality_score',label:'Quality score',unit:'score',direction:'higher',formula:'200 × valid companies / (returned positions + requested count)',description:'A score from 0 to 100 that combines how many requested companies were found with precision. With 50 requested: 50 valid out of 50 returned scores 100; 25 valid out of 50 scores 50; 25 valid out of 25 scores 66.7. Cost is measured separately. Smaller exhaustive reference lists use their eligible count; known-empty cases have a separate result.'},
   {id:'precision',label:'Precision',unit:'percent',direction:'higher',formula:'Valid companies / returned positions',description:'Equal-query mean. The denominator includes duplicate and malformed positions. An unknown company receives no credit.'},
   {id:'requested_count_fraction',label:'Valid companies (% of requested)',unit:'percent',direction:'higher',formula:'Valid companies / requested count',description:'Shows how much of the requested list was filled with distinct, valid companies. This is not recall.'},
   {id:'cost_per_valid_company',label:'Cost per valid company',unit:'currency',direction:'lower',formula:'Sum of search costs / sum of valid companies',description:'Includes search operations and continuations. Research and judging costs are separate. Missing prices make the aggregate undefined.'},
@@ -529,7 +538,7 @@ export function getCompanies(row, judge='llm', query=null, data=null) {
         'Synthetic fixture: there is not enough evidence to establish this condition.',
       evidence_refs:letter==='U' || letter==='N' ? [] : [sourceId],
       evidence_ids:letter==='U' || letter==='N' ? [] : [sourceId]}));
-    const evidence = letter==='M' || letter==='D' ? [] : [{id:sourceId,title:'Synthetic fixture · company source',
+    const evidence = letter==='M' || letter==='D' ? [] : [{id:sourceId,title:'Synthetic company source',
       url:`https://${identity.domain}/synthetic-fixture`,synthetic:true,
       text:'Invented example for interface development. This excerpt represents the place where captured company facts, event dates and exact condition evidence will appear. It makes no factual claim about an existing company.',
       fetched_at:'2026-10-06T00:00:00Z',published_at:null,method:'synthetic_fixture',
@@ -563,7 +572,7 @@ export function exportRows(data, {queryIds=null,judge='llm',providerIds=null}={}
     .map(row=>{
       const query = queryMap.get(row.query_id);
       const metric = getMetrics(row,judge,query);
-      return {query_id:query.id,query_index:query.index,query:query.query,complexity:query.complexity,
+      return {query_id:query.id,query_index:query.index,query:query.query,complexity:query.complexity,complexity_name:complexityLabel(query.complexity),
         industry:query.industry,provider:row.provider,judge,trial:row.trial ?? 1,synthetic:data.meta.synthetic,
         ...Object.fromEntries(Object.entries(metric ?? {}).filter(([,value])=>!record(value) && !Array.isArray(value)))};
     });

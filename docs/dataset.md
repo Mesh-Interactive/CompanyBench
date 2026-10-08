@@ -24,12 +24,15 @@ IDs. Index 100 is therefore not CSB-100. Exports and the CLI show both values.
 
 Complexity is a descriptive annotation, not a measured difficulty score:
 
-| Level | Meaning | Cases |
-|---|---|---:|
-| L1 | Simple predicates | 27 |
-| L2 | Multiple filters or substantive semantic requirement | 71 |
-| L3 | Dated, quantitative, specialist, or relational evidence | 118 |
-| L4 | Compound joins, sequences, or difficult exclusions | 34 |
+| Class | Saved code | Meaning | Cases |
+|---|---|---|---:|
+| Basic filters | L1 | Straightforward industry, location or company-type requirements | 27 |
+| Multiple requirements | L2 | Several filters or a specific business description | 71 |
+| Specific evidence | L3 | Dated events, numeric thresholds, specialist facts or relationships | 118 |
+| Complex conditions | L4 | Combined relationships, event sequences or difficult exclusions | 34 |
+
+The results website displays these class names. Saved datasets, CLI selections
+and URL filters retain the release codes for compatibility with existing runs.
 
 Every case has exactly one `primary_category`: firmographic, semantic,
 technographic, signals, ecosystem, or finite_reference. Other facets overlap
