@@ -48,7 +48,7 @@ This is the strongest credibility feature. A visitor should be able to trace a h
 
 The initial UI must show **Synthetic data** and state that the results are invented in its persistent header. Result drawers and downloads preserve that context. Fictional company names and reserved `.example` domains avoid creating invented factual claims about real businesses. Evidence excerpts and judge results must say that they are synthetic.
 
-Do not add fabricated confidence intervals, verification badges, publication dates, provider quotes, or a declaration that Avina wins. Real provider names can illustrate the intended comparison, but their synthetic values are not predictions. The eventual measured release needs a separate release identifier and an explicit switch from synthetic to measured data.
+Do not add fabricated confidence intervals, verification badges, publication dates, provider quotes, or measured superiority claims. The current `avina_leads` mock scenario deliberately assigns Avina the best values at the user's request, with that choice disclosed in the interface and dataset. Its synthetic values are not predictions. The eventual measured release needs a separate release identifier and an explicit switch from synthetic to measured data.
 
 ## Brand and accessibility
 

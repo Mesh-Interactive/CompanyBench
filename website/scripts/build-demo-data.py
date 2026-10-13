@@ -2,8 +2,8 @@
 
 The queries and configurations are real. Every count, price, time, company and
 judgment is invented for interface development and must not be published as a
-measurement. This fixture intentionally gives different providers different
-strengths; Avina is not assigned the highest overall result.
+measurement. At the user's request, this mock scenario assigns Avina the best
+results on every metric. Other providers retain their earlier invented values.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ CATALOGUE = ROOT / "src/companybench/data/queries.jsonl"
 OUTPUT = ROOT / "website/dist/data/demo.json"
 
 PROFILES = {
-    "avina": ("Avina", "Avina", "#7956DE", 0.79, 0.89, 2.3, 48),
+    "avina": ("Avina", "Avina", "#7956DE", 1.0, 1.0, 0.1, 1),
     "exa-websets": ("Exa Websets", "Exa", "#278B9B", 0.91, 0.90, 2.5, 78),
     "exa-agent-high": ("Exa Agent High", "Exa", "#1D7180", 0.86, 0.93, 7.4, 155),
     "exa-agent-auto": ("Exa Agent Auto", "Exa", "#49A9B3", 0.83, 0.87, 4.1, 95),
@@ -97,10 +97,7 @@ def make_row(query: dict, provider: str) -> dict:
     difficulty = (complexity - 1) * 0.038
     high_effort = provider.endswith(("high", "max", "pro"))
     difficulty *= 0.60 if high_effort else 1.0
-    # Different slices intentionally have different strongest systems.
-    if query["signal_tags"] and provider == "avina":
-        volume += 0.055
-        precision += 0.025
+    # Retain the other providers' existing synthetic differences by use case.
     if "technographic" in query.get("primary_category", "") and provider.startswith("exa"):
         precision += 0.025
     if query["industry"] == "Manufacturing" and provider.startswith("parallel"):
@@ -155,6 +152,12 @@ def make_row(query: dict, provider: str) -> dict:
                 if altered[i] == "V":
                     altered[i] = "I"
         category_map[judge] = "".join(altered)
+    if provider == "avina":
+        # This explicit mock assignment never applies to saved measured reports.
+        # Respect the requested cap and smaller exhaustive reference lists.
+        returned = attainable
+        category_map = {judge: "V" * returned for judge in category_map}
+        status = "completed"
     time = round(seconds * (1 + 0.10 * (complexity - 1)) * rng.uniform(0.65, 1.55), 1)
     if status == "failed":
         time *= 0.38
@@ -200,10 +203,11 @@ def main() -> None:
             "schema_version": "1.0",
             "synthetic": True,
             "title": "CompanyBench synthetic preview",
-            "disclosure": "All performance results, companies, costs, times and judgments are invented. They are not provider measurements or real company claims.",
+            "disclosure": "All performance results, companies, costs, times and judgments are invented. Avina is intentionally assigned the best results in this preview. These are not provider measurements or real company claims.",
             "dataset_version": "2.0.0",
             "reference_time": "2026-10-06T00:00:00Z",
             "fixture_seed": "companybench-site-v1",
+            "fixture_scenario": "avina_leads",
             "dataset_hash": hashlib.sha256(CATALOGUE.read_bytes()).hexdigest(),
             "requested_count": 50,
             "trials": 1,

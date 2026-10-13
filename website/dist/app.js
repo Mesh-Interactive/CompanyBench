@@ -189,7 +189,7 @@ function render() {
     if (button.dataset.page === state.page) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
   });
   $('release-summary').innerHTML = esc(data.queries.length + ' queries, ' + data.providers.length + ' provider configurations') + '<br>' + esc((data.meta.requested_count ?? 'Variable') + ' companies requested per query, ' + (data.meta.trials ?? 1) + ' trial' + ((data.meta.trials ?? 1) > 1 ? 's' : ''));
-  $('data-notice').innerHTML = '<span class="notice-dot"></span><strong>' + (synthetic() ? 'Synthetic data' : 'Automated preliminary results') + '</strong><span>' + (synthetic() ? 'All results are invented for this preview.' : 'Saved automated evaluations. No independent verification.') + '</span>';
+  $('data-notice').innerHTML = '<span class="notice-dot"></span><strong>' + (synthetic() ? 'Synthetic data' : 'Automated preliminary results') + '</strong><span>' + (synthetic() ? 'All results are invented for this preview.' + (data.meta.fixture_scenario === 'avina_leads' ? ' Avina is set to lead.' : '') : 'Saved automated evaluations. No independent verification.') + '</span>';
   const showControls = state.page !== 'methodology';
   $('controls').hidden = !showControls;
   document.querySelector('.provider-selector').hidden = !showControls;

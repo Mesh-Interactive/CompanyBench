@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import {filterQueries, facetOptions, getMetrics, summarize, getCompanies, normalizeDataset, COMPLEXITY_LEVELS, complexityLabel} from '../dist/data.js';
+import {filterQueries, facetOptions, getMetrics, summarize, getCompanies, normalizeDataset, COMPLEXITY_LEVELS, complexityLabel, METRICS} from '../dist/data.js';
 
 const data = normalizeDataset(JSON.parse(fs.readFileSync(new URL('../dist/data/demo.json', import.meta.url))));
 
@@ -11,6 +11,30 @@ test('demo data contains the frozen catalogue and all search configurations', ()
   assert.equal(data.rows.length, 3500);
   assert.equal(data.meta.synthetic, true);
   assert.equal(new Set(data.rows.map(r => `${r.query_id}:${r.provider}:${r.trial}`)).size, 3500);
+});
+
+test('Avina-leading synthetic scenario leads every metric, evaluator and query group', () => {
+  assert.equal(data.meta.synthetic, true);
+  assert.equal(data.meta.fixture_scenario, 'avina_leads');
+  assert.match(data.meta.disclosure, /Avina is intentionally assigned the best results/);
+  const cohorts = [data.queries];
+  for (const [key,values] of Object.entries(facetOptions(data))) {
+    for (const value of values) {
+      cohorts.push(filterQueries(data,{facets:{[key]:[value]}}));
+    }
+  }
+  for (const {id:judge} of data.judges) {
+    for (const queries of cohorts) {
+      const summaries = summarize(data,{queries,judge});
+      const avina = summaries.find(row=>row.provider==='avina');
+      for (const metric of METRICS) {
+        const ranked = summaries.filter(row=>Number.isFinite(row[metric.id])).sort((a,b)=>
+          (metric.direction==='lower' ? a[metric.id]-b[metric.id] : b[metric.id]-a[metric.id]) || a.label.localeCompare(b.label));
+        if (ranked.length) assert.equal(ranked[0].provider,'avina',`${judge}, ${metric.id}, ${queries[0].id}`);
+      }
+      assert.equal(avina.search_errors,0);
+    }
+  }
 });
 
 test('filters OR selected values within a facet and AND across facets', () => {
@@ -152,7 +176,7 @@ test('all generated row bounds and reference counts are valid', () => {
     }
   }
   const ranking = summarize(data).sort((a,b)=>b.quality_score-a.quality_score);
-  assert.notEqual(ranking[0].provider,'avina');
+  assert.equal(ranking[0].provider,'avina');
 });
 
 test('condition drilldowns respect the actual query logic', () => {
