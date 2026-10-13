@@ -16,7 +16,18 @@ test('demo data contains the frozen catalogue and all search configurations', ()
 test('Avina-leading synthetic scenario leads every metric, evaluator and query group', () => {
   assert.equal(data.meta.synthetic, true);
   assert.equal(data.meta.fixture_scenario, 'avina_leads');
+  assert.equal(data.meta.fixture_revision, 2);
   assert.match(data.meta.disclosure, /Avina is intentionally assigned the best results/);
+  for (const {id:judge} of data.judges) {
+    const avina = summarize(data,{judge}).find(row=>row.provider==='avina');
+    assert.ok(avina.quality_score>0 && avina.quality_score<100);
+    assert.ok(avina.precision>0 && avina.precision<1);
+    assert.ok(avina.requested_count_fraction<1);
+    assert.ok(avina.recall>0 && avina.recall<1);
+    assert.ok(avina.unknown_fraction>0);
+    const counts = data.rows.filter(row=>row.provider==='avina').map(row=>row.categories[judge].split('V').length-1);
+    assert.ok(new Set(counts).size>4);
+  }
   const cohorts = [data.queries];
   for (const [key,values] of Object.entries(facetOptions(data))) {
     for (const value of values) {

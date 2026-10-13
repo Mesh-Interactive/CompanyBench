@@ -2,8 +2,9 @@
 
 The queries and configurations are real. Every count, price, time, company and
 judgment is invented for interface development and must not be published as a
-measurement. At the user's request, this mock scenario assigns Avina the best
-results on every metric. Other providers retain their earlier invented values.
+measurement. At the user's request, this mock scenario gives Avina varied,
+imperfect results that lead every metric. Other providers retain their earlier
+invented values.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import math
 import random
 from pathlib import Path
 
@@ -19,7 +21,7 @@ CATALOGUE = ROOT / "src/companybench/data/queries.jsonl"
 OUTPUT = ROOT / "website/dist/data/demo.json"
 
 PROFILES = {
-    "avina": ("Avina", "Avina", "#7956DE", 1.0, 1.0, 0.1, 1),
+    "avina": ("Avina", "Avina", "#7956DE", 0.95, 0.97, 0.7, 22),
     "exa-websets": ("Exa Websets", "Exa", "#278B9B", 0.91, 0.90, 2.5, 78),
     "exa-agent-high": ("Exa Agent High", "Exa", "#1D7180", 0.86, 0.93, 7.4, 155),
     "exa-agent-auto": ("Exa Agent Auto", "Exa", "#49A9B3", 0.83, 0.87, 4.1, 95),
@@ -152,12 +154,6 @@ def make_row(query: dict, provider: str) -> dict:
                 if altered[i] == "V":
                     altered[i] = "I"
         category_map[judge] = "".join(altered)
-    if provider == "avina":
-        # This explicit mock assignment never applies to saved measured reports.
-        # Respect the requested cap and smaller exhaustive reference lists.
-        returned = attainable
-        category_map = {judge: "V" * returned for judge in category_map}
-        status = "completed"
     time = round(seconds * (1 + 0.10 * (complexity - 1)) * rng.uniform(0.65, 1.55), 1)
     if status == "failed":
         time *= 0.38
@@ -176,6 +172,59 @@ def make_row(query: dict, provider: str) -> dict:
         else None,
         "timing_censored": False,
         "synthetic": True,
+    }
+
+
+def make_avina_row(query: dict, other_rows: list[dict]) -> dict:
+    """Choose imperfect mock results that rank ahead of the other mock providers."""
+    row = make_row(query, "avina")
+    rng = random_for(f"avina-leading-preview:{query['id']}")
+    reference = query.get("reference", {})
+    exhaustive = reference.get("exhaustive", False)
+    attainable = min(50, len(reference["companies"])) if exhaustive else 50
+    categories = [text for other in other_rows for text in other["categories"].values()]
+    best_valid = max(text.count("V") for text in categories)
+    best_precision = max((text.count("V") / len(text) for text in categories if text), default=0)
+    # Small finite lists can require matching a perfect result. Open-ended
+    # queries use varied counts and retain invalid or unverified positions.
+    target_valid = min(attainable, best_valid + rng.randint(0 if exhaustive else 1, 3))
+    returned = min(50, target_valid + rng.randint(1, 4))
+    if best_precision:
+        returned = min(returned, math.floor(target_valid / best_precision))
+    category_map = {}
+    for judge in row["categories"]:
+        other_categories = [other["categories"][judge] for other in other_rows]
+        precision = max(
+            (text.count("V") / len(text) for text in other_categories if text), default=0
+        )
+        valid = min(
+            target_valid,
+            max(
+                max(text.count("V") for text in other_categories)
+                + rng.randint(0 if exhaustive else 1, 3),
+                math.ceil(precision * returned),
+            ),
+        )
+        missing_rate = min(
+            ((text.count("U") + text.count("N")) / len(text) for text in other_categories if text),
+            default=0,
+        )
+        unknown = min(returned - valid, math.floor(missing_rate * returned), rng.randint(0, 1))
+        positions = ["V"] * valid + ["I"] * (returned - valid - unknown) + ["U"] * unknown
+        rng.shuffle(positions)
+        category_map[judge] = "".join(positions)
+    return {
+        **row,
+        "returned_companies": returned,
+        "categories": category_map,
+        "cost_usd": round(
+            min(other["cost_usd"] for other in other_rows) * rng.uniform(0.82, 0.96), 4
+        ),
+        "latency_seconds": round(
+            min(other["latency_seconds"] for other in other_rows) * rng.uniform(0.82, 0.96), 1
+        ),
+        "search_status": "completed",
+        "search_error": None,
     }
 
 
@@ -198,6 +247,10 @@ def main() -> None:
                 "configuration": configured[name],
             }
         )
+    rows = []
+    for query in queries:
+        other_rows = [make_row(query, provider) for provider in PROFILES if provider != "avina"]
+        rows.extend([make_avina_row(query, other_rows), *other_rows])
     payload = {
         "meta": {
             "schema_version": "1.0",
@@ -208,6 +261,7 @@ def main() -> None:
             "reference_time": "2026-10-06T00:00:00Z",
             "fixture_seed": "companybench-site-v1",
             "fixture_scenario": "avina_leads",
+            "fixture_revision": 2,
             "dataset_hash": hashlib.sha256(CATALOGUE.read_bytes()).hexdigest(),
             "requested_count": 50,
             "trials": 1,
@@ -220,7 +274,7 @@ def main() -> None:
             {"id": "decisions", "label": "OpenAI Decisions"},
             {"id": "jev", "label": "Jev / TypeSafe"},
         ],
-        "rows": [make_row(query, provider) for query in queries for provider in PROFILES],
+        "rows": rows,
     }
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n")

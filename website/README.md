@@ -7,8 +7,9 @@ interface preview, not a provider comparison. No searches or paid API calls run
 when you open this site.
 
 The current synthetic scenario intentionally assigns Avina the best results on
-every metric. This is a requested mock presentation, not a prediction. Imported
-measured reports use their saved values and the same provider-neutral formulas.
+every metric, with varied, imperfect scores rather than the maximum possible
+values. This is a requested mock presentation, not a prediction. Imported measured
+reports use their saved values and the same provider-neutral formulas.
 
 ## Open the site
 
@@ -106,8 +107,10 @@ python3 website/scripts/build-standalone.py
 
 The synthetic fixture generator is deterministic and reads the catalogue and
 provider presets. It does not call any provider. The `avina_leads` scenario gives
-Avina all attainable valid companies and lower invented cost and time. Other
-providers retain varied fixture results to exercise errors and evidence gaps.
+Avina slightly better invented results than other providers, with varying counts,
+invalid companies and evidence gaps. Cost and time vary below the other fixtures.
+Other providers retain their existing results. Smaller finite reference lists
+can require perfect results to match an existing provider's result.
 
 `website/package.json` also exposes `npm test` and `npm run build` from the
 `website` directory. No `npm install` is needed. Python 3.11+ runs the portable
