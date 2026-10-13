@@ -4,6 +4,7 @@ import {METRICS, FACET_LABELS, COMPLEXITY_LEVELS, complexityLabel, loadData, nor
 let data;
 const state = {page: 'overview', metric: 'mean_valid_companies', judge: 'llm', providers: new Set(), facets: {}, search: '', group: 'complexity', plot: 'cost', pageIndex: 0, pageSize: 20, detail: null, companySearch: '', companyVerdict: 'all', trial: 1};
 let filtered = [], summaries = [], openedFacet = null, openedSelect = null, lastFocused = null, detailFocusTarget = null, toastTimer, rankingsOpen = false;
+let tooltipAnchor = null, pendingTooltip = null, tooltipOpenTimer, tooltipCloseTimer, keyboardFocus = false, lastPointerType = 'mouse';
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[char]));
 const finite = value => typeof value === 'number' && Number.isFinite(value);
@@ -16,6 +17,88 @@ const stamp = () => synthetic() ? 'Synthetic data' : 'Automated preliminary resu
 const safeUrl = value => { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : null; } catch { return null; } };
 const active = id => state.providers.has(id);
 const facetLabel = (key, value) => key === 'complexity' ? complexityLabel(value) : String(value);
+const tooltipTargets = '[data-point],[data-help-metric],[data-metric],[data-tooltip],[data-result-provider],[data-action="metric-help"]';
+
+function tooltipPosition(anchor, size, viewport) {
+  const padding = 12, gap = 10;
+  const right = anchor.right + gap;
+  const left = right + size.width <= viewport.width - padding ? right : anchor.left - gap - size.width;
+  return {
+    left: Math.max(padding, Math.min(left, viewport.width - size.width - padding)),
+    top: Math.max(padding, Math.min(anchor.top + (anchor.height - size.height) / 2, viewport.height - size.height - padding)),
+  };
+}
+
+function resultTooltip(item, values, queryId = null) {
+  const rows = [
+    ['Valid companies found', queryId ? count(values.mean_valid_companies) : display(values.mean_valid_companies,'mean_valid_companies') + ' per query'],
+    ['Precision', display(values.precision,'precision')],
+    ['Quality score', display(values.quality_score,'quality_score')],
+    ['Cost per valid company', display(values.cost_per_valid_company,'cost_per_valid_company')],
+    ['Search time', display(values.mean_latency_seconds,'mean_latency_seconds')],
+  ];
+  return '<div class="tooltip-heading">' + dot(item) + esc(item.label) + '</div><dl>' + rows.map(([label,value]) => '<div><dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd></div>').join('') + '</dl><p class="tooltip-context">' + esc(queryId ?? filtered.length + ' queries') + ', ' + esc(data.judges.find(j=>j.id===state.judge)?.label ?? state.judge) + '</p>' + (item.effort ? '<p class="tooltip-context">Effort: ' + esc(item.effort) + '</p>' : '');
+}
+
+function tooltipContent(target) {
+  const metricId = target.dataset.helpMetric ?? target.dataset.metric ?? (target.dataset.action === 'metric-help' ? state.metric : null);
+  if (metricId) {
+    const item = byId(metricId);
+    return item ? '<strong>' + esc(item.label) + '</strong><p>' + esc(item.formula) + '</p><p>' + esc(item.description) + '</p>' : '';
+  }
+  if (target.dataset.resultProvider) {
+    const item = provider(target.dataset.resultProvider);
+    const query = data.queries.find(q=>q.id === target.dataset.query);
+    const values = getMetrics(getRow(data,query.id,item.id,state.trial),state.judge,query);
+    return values ? resultTooltip(item,values,query.id) : '<strong>' + esc(item.label) + '</strong><p>No complete evaluation is saved for this query and evaluator.</p>';
+  }
+  const providerId = target.dataset.point ?? (target.classList.contains('rank-row') ? target.dataset.provider : null);
+  if (providerId) {
+    const row = summaries.find(item=>item.provider === providerId);
+    return row ? resultTooltip(provider(providerId),row) : '';
+  }
+  return target.dataset.tooltip ? '<p>' + esc(target.dataset.tooltip) + '</p>' : '';
+}
+
+function hideTooltip() {
+  clearTimeout(tooltipOpenTimer);
+  clearTimeout(tooltipCloseTimer);
+  const tooltip = $('hover-tooltip');
+  if (tooltip.matches(':popover-open')) tooltip.hidePopover();
+  tooltip.hidden = true;
+  if (tooltipAnchor) {
+    const descriptions = (tooltipAnchor.getAttribute('aria-describedby') ?? '').split(' ').filter(id=>id && id!=='hover-tooltip');
+    if (descriptions.length) tooltipAnchor.setAttribute('aria-describedby',descriptions.join(' '));
+    else tooltipAnchor.removeAttribute('aria-describedby');
+  }
+  tooltipAnchor = null;
+  pendingTooltip = null;
+}
+
+function showTooltip(target) {
+  if (!target.isConnected) return;
+  const content = tooltipContent(target);
+  if (!content) return;
+  hideTooltip();
+  const tooltip = $('hover-tooltip');
+  tooltip.innerHTML = content;
+  tooltip.hidden = false;
+  tooltip.style.width = Math.min(320,window.innerWidth-24) + 'px';
+  tooltip.showPopover?.();
+  const position = tooltipPosition(target.getBoundingClientRect(),tooltip.getBoundingClientRect(),{width:window.innerWidth,height:window.innerHeight});
+  tooltip.style.left = position.left + 'px';
+  tooltip.style.top = position.top + 'px';
+  tooltipAnchor = target;
+  const ids = (target.getAttribute('aria-describedby') ?? '').split(' ').filter(Boolean);
+  target.setAttribute('aria-describedby',[...new Set([...ids,'hover-tooltip'])].join(' '));
+}
+
+function enhanceTooltips() {
+  document.querySelectorAll('[title]').forEach(element => {
+    element.dataset.tooltip = element.getAttribute('title');
+    element.removeAttribute('title');
+  });
+}
 
 // Preserve native select values and change events while matching Avina's menus.
 // Every single-select control uses the same keyboard and focus behavior.
@@ -59,6 +142,7 @@ function closeSelect(restoreFocus = false) {
 }
 
 function openSelect(id) {
+  hideTooltip();
   if (openedSelect === id) { closeSelect(true); return; }
   closeSelect();
   closePopover();
@@ -167,7 +251,7 @@ function renderControls() {
   const common = ['complexity', 'industry', 'primary_category', 'signal_tags', 'technology', 'geography'];
   $('filter-buttons').innerHTML = common.filter(key => options[key]).map(key => {
     const n = (state.facets[key] ?? []).length;
-    return '<button class="filter-pill' + (n ? ' selected' : '') + '" data-facet="' + esc(key) + '" aria-expanded="' + (openedFacet === key) + '">' + esc(FACET_LABELS[key]) + (n ? ' <span>' + n + '</span>' : '') + ' <span aria-hidden="true">⌄</span></button>';
+    return '<button class="filter-pill' + (n ? ' selected' : '') + '" data-facet="' + esc(key) + '" aria-expanded="' + (openedFacet === key) + '">' + esc(FACET_LABELS[key]) + (n ? ' <span>' + n + '</span>' : '') + '</button>';
   }).join('');
   const selectedCount = Object.values(state.facets).reduce((total, values) => total + values.length, 0);
   $('filter-count').textContent = selectedCount ? '(' + selectedCount + ')' : '';
@@ -178,6 +262,7 @@ function renderControls() {
 }
 
 function render() {
+  hideTooltip();
   closeSelect();
   filtered = filterQueries(data, {search: state.search, facets: state.facets});
   summaries = summarize(data, {queries: filtered, judge: state.judge});
@@ -202,6 +287,7 @@ function render() {
   else if (state.page === 'queries') $('content').innerHTML = queryTable();
   else $('content').innerHTML = methodology() + complexityDefinitions();
   enhanceSelects();
+  enhanceTooltips();
   if ($('filter-dialog').open) { $('filter-match-count').textContent = filtered.length + ' matching queries'; }
   saveLocation();
 }
@@ -215,7 +301,7 @@ function highlights() {
   ];
   return '<div class="highlight-grid">' + groups.map(([id, title]) => {
     const best = sorted(summaries.filter(row => active(row.provider) && finite(row[id])), byId(id))[0];
-    return '<article class="highlight-card"><div class="highlight-label"><span>' + esc(title) + '</span><button class="help-button" data-help-metric="' + id + '" aria-label="Explain ' + esc(title) + '">?</button></div><div class="highlight-value">' + (best ? display(best[id], id) : 'Not available') + '</div><div class="highlight-provider">' + (best ? dot(best) + esc(best.label) : 'Select a provider') + '</div></article>';
+    return '<article class="highlight-card"><div class="highlight-label"><span>' + esc(title) + '</span><button class="help-button" data-help-metric="' + id + '" aria-label="Explain ' + esc(title) + '"></button></div><div class="highlight-value">' + (best ? display(best[id], id) : 'Not available') + '</div><div class="highlight-provider">' + (best ? dot(best) + esc(best.label) : 'Select a provider') + '</div></article>';
   }).join('') + '</div>';
 }
 
@@ -226,7 +312,7 @@ function coverage() {
   const errors = selected.reduce((sum, row) => sum + row.search_errors, 0);
   const missing = selected.reduce((sum, row) => sum + row.unknown_companies + row.unresolved_identities, 0);
   const incomplete = selected.reduce((sum, row) => sum + row.grading_errors, 0);
-  return '<details class="coverage"><summary>Searches saved: ' + count(tasks) + ' / ' + count(expected) + '<span class="muted">Missing evidence: ' + count(missing) + ' companies ⌄</span></summary><div class="coverage-line"><span><strong>' + state.providers.size + '</strong> selected providers</span><span><strong>' + count(errors) + '</strong> search errors</span><span><strong>' + count(incomplete) + '</strong> incomplete evaluations</span></div></details>';
+  return '<details class="coverage"><summary><span class="coverage-summary">Searches saved: ' + count(tasks) + ' / ' + count(expected) + '<span class="muted">Missing evidence: ' + count(missing) + ' companies</span></span></summary><div class="coverage-line"><span><strong>' + state.providers.size + '</strong> selected providers</span><span><strong>' + count(errors) + '</strong> search errors</span><span><strong>' + count(incomplete) + '</strong> incomplete evaluations</span></div></details>';
 }
 
 function charts() {
@@ -234,9 +320,9 @@ function charts() {
   const ranked = sorted(summaries);
   const max = Math.max(0, ...ranked.map(row => finite(row[item.id]) ? row[item.id] : 0));
   const ranking = ranked.map((row, index) => '<button class="rank-row' + (active(row.provider) ? '' : ' faded') + '" data-provider="' + esc(row.provider) + '" aria-pressed="' + active(row.provider) + '" title="' + esc(row.label + ': ' + format(row[item.id]) + '. ' + (active(row.provider) ? 'Click to fade.' : 'Click to emphasize.')) + '"><span class="rank-no">' + (index + 1) + '</span><span class="rank-name">' + esc(row.label) + '</span><span class="rank-track"><span class="rank-bar" style="display:block;width:' + (max && finite(row[item.id]) ? Math.max(1, row[item.id] / max * 100) : 0) + '%;background:' + color(row.color) + '"></span></span><span class="rank-value">' + format(row[item.id]) + '</span></button>').join('');
-  const chartPanel = '<section class="panel primary-chart"><header class="panel-head"><div class="chart-title"><h2>Quality score and ' + (state.plot === 'cost' ? 'cost' : 'search time') + '</h2><button class="help-button" data-help-metric="quality_score" aria-label="Explain quality score">?</button></div><div class="toggle-group" role="group" aria-label="Chart horizontal axis"><button data-plot="cost" aria-pressed="' + (state.plot === 'cost') + '" class="' + (state.plot === 'cost' ? 'active' : '') + '">Cost</button><button data-plot="time" aria-pressed="' + (state.plot === 'time') + '" class="' + (state.plot === 'time' ? 'active' : '') + '">Search time</button></div></header>' + scatter() + '<div class="chart-tooltip" id="chart-tooltip" hidden></div><details class="chart-notes"><summary>Chart details ⌄</summary><p>Each point represents a provider configuration on ' + filtered.length + ' queries. Higher quality and lower ' + (state.plot === 'cost' ? 'cost per valid company' : 'search time') + ' are better. Providers with unknown values are omitted.</p><button class="text-button" data-help-metric="quality_score">Quality score definition</button></details></section>';
-  const rankingPanel = '<section class="panel ranking-panel"><header class="panel-head"><h2>' + esc(item.label) + ' by provider</h2></header><div class="ranking">' + ranking + '</div><details class="chart-notes"><summary>Calculation ⌄</summary><p>' + esc(item.formula) + (item.id === 'recall' ? '. Only complete reference lists contribute.' : '.') + '</p></details></section>';
-  if (state.page === 'overview') return '<div class="two-up overview-top">' + chartPanel + '<aside>' + highlights() + coverage() + '</aside></div><details class="provider-rankings"' + (rankingsOpen ? ' open' : '') + '><summary>Provider rankings ⌄</summary>' + rankingPanel + '</details>';
+  const chartPanel = '<section class="panel primary-chart"><header class="panel-head"><div class="chart-title"><h2>Quality score and ' + (state.plot === 'cost' ? 'cost' : 'search time') + '</h2><button class="help-button" data-help-metric="quality_score" aria-label="Explain quality score"></button></div><div class="toggle-group" role="group" aria-label="Chart horizontal axis"><button data-plot="cost" aria-pressed="' + (state.plot === 'cost') + '" class="' + (state.plot === 'cost' ? 'active' : '') + '">Cost</button><button data-plot="time" aria-pressed="' + (state.plot === 'time') + '" class="' + (state.plot === 'time' ? 'active' : '') + '">Search time</button></div></header>' + scatter() + '</section>';
+  const rankingPanel = '<section class="panel ranking-panel"><header class="panel-head"><h2>' + esc(item.label) + ' by provider</h2></header><div class="ranking">' + ranking + '</div><details class="chart-notes"><summary>Calculation</summary><p>' + esc(item.formula) + (item.id === 'recall' ? '. Only complete reference lists contribute.' : '.') + '</p></details></section>';
+  if (state.page === 'overview') return '<div class="two-up overview-top">' + chartPanel + '<aside>' + highlights() + coverage() + '</aside></div><details class="provider-rankings"' + (rankingsOpen ? ' open' : '') + '><summary>Provider rankings</summary>' + rankingPanel + '</details>';
   return '<div class="two-up">' + chartPanel + rankingPanel + '</div>';
 }
 
@@ -260,8 +346,8 @@ function scatter() {
   points.forEach((row, index) => {
     const label = row.label + '. Quality score ' + row.quality_score.toFixed(1) + '. ' + xMetric.label + ' ' + format(row[xId], xMetric) + '. Click to change emphasis.';
     const attrs = ' class="chart-point" data-provider="' + esc(row.provider) + '" data-point="' + esc(row.provider) + '" role="button" tabindex="0" aria-pressed="' + active(row.provider) + '" aria-label="' + esc(label) + '" fill="' + color(row.color) + '" stroke="white" stroke-width="1.5" opacity="' + (active(row.provider) ? 1 : .16) + '"';
-    if (index % 3 === 0) graphic += '<rect x="' + (x(row[xId]) - 5) + '" y="' + (y(row.quality_score) - 5) + '" width="10" height="10" rx="1.5"' + attrs + '><title>' + esc(label) + '</title></rect>';
-    else graphic += '<circle cx="' + x(row[xId]) + '" cy="' + y(row.quality_score) + '" r="' + (index % 3 === 1 ? 6 : 4.5) + '"' + attrs + '><title>' + esc(label) + '</title></circle>';
+    const marker = index % 3 === 0 ? '<rect class="point-marker" x="-5" y="-5" width="10" height="10" rx="1.5"/>' : '<circle class="point-marker" r="' + (index % 3 === 1 ? 6 : 4.5) + '"/>';
+    graphic += '<g transform="translate(' + x(row[xId]) + ',' + y(row.quality_score) + ')"' + attrs + '><circle class="point-hit" r="8" fill="transparent" stroke="none"/>' + marker + '</g>';
   });
   if (!points.length) graphic += '<text x="' + (width/2) + '" y="170" text-anchor="middle">No complete values available.</text>';
   return graphic + '</svg>';
@@ -280,7 +366,7 @@ function heatmap() {
   return '<section class="panel"><header class="panel-head"><div><h2>Results by query group</h2><p class="panel-subtitle">' + esc(metric().label) + ' by subgroup. Click a cell to inspect those queries.</p></div><label class="control-label">Group by <select id="group-select" aria-label="Query group"><option value="complexity"' + (state.group === 'complexity' ? ' selected' : '') + '>Complexity</option><option value="industry"' + (state.group === 'industry' ? ' selected' : '') + '>Industry</option><option value="primary_category"' + (state.group === 'primary_category' ? ' selected' : '') + '>Search type</option></select></label></header><div class="table-scroll"><table class="segment-heatmap"><thead><tr><th>' + esc(FACET_LABELS[state.group]) + '</th>' + data.providers.map(item => '<th class="provider-heading' + (active(item.id) ? '' : ' faded') + '">' + esc(item.label) + '</th>').join('') + '</tr></thead><tbody>' + groups.map(group => {
     const metrics = summarize(data, {queries: group.queries, judge: state.judge});
     return '<tr><td class="heat-label">' + esc(facetLabel(state.group,group.value)) + '<small>' + group.queries.length + ' queries</small></td>' + metrics.map(row => '<td class="heat-cell' + (active(row.provider) ? '' : ' faded') + '"><button data-group-value="' + esc(JSON.stringify(group.value)) + '" data-group-provider="' + esc(row.provider) + '" title="Inspect ' + esc(facetLabel(state.group,group.value) + ', ' + row.label) + '"><span class="heat-value" style="background:rgba(128,90,213,' + (finite(row[state.metric]) ? Math.min(.2, .04 + (metric().unit === 'percent' ? row[state.metric] : metric().unit === 'score' ? row[state.metric] / 100 : .5) * .15) : .02) + ')">' + format(row[state.metric]) + '</span></button></td>').join('') + '</tr>';
-  }).join('') + '</tbody></table></div><details class="chart-notes"><summary>Comparison limitations ⌄</summary><p>Small groups have fewer queries. Missing metrics remain unavailable. These are descriptive comparisons of this query set.</p></details></section>';
+  }).join('') + '</tbody></table></div><details class="chart-notes"><summary>Comparison limitations</summary><p>Small groups have fewer queries. Missing metrics remain unavailable. These are descriptive comparisons of this query set.</p></details></section>';
 }
 
 function queryTable() {
@@ -294,7 +380,7 @@ function queryTable() {
     const label = values ? format(values[state.metric]) : row ? 'Incomplete grading' : 'Not attempted';
     const context = values ? count(values.valid_companies) + ' valid; ' + display(values.precision, 'precision') + ' precision' : row ? 'Search result saved; no score from this judge' : 'No saved task result';
     return '<td class="heat-cell' + (active(item.id) ? '' : ' faded') + '"><button data-query="' + esc(query.id) + '" data-result-provider="' + esc(item.id) + '" aria-label="' + esc(query.id + ', ' + item.label + ': ' + label + '. ' + context + '. Open company results.') + '" title="' + esc(context + (values?.search_status !== 'completed' ? '; ' + (values?.search_status ?? row?.search_status ?? 'Unattempted') : '')) + '"><span class="cell-value">' + esc(label) + '</span><span class="cell-detail">' + esc(context) + '</span></button></td>';
-  }).join('') + '</tr>').join('') + (queries.length ? '' : '<tr><td colspan="' + (data.providers.length + 1) + '">No queries match the current selection. Clear the search or remove a filter.</td></tr>') + '</tbody></table></div><div class="pagination"><span>Queries ' + (filtered.length ? start + 1 : 0) + '–' + Math.min(start + state.pageSize, filtered.length) + ' of ' + filtered.length + '; ' + esc(metric().label) + '</span><div class="page-buttons"><button class="button small" data-action="previous-page"' + (state.pageIndex === 0 ? ' disabled' : '') + '>← Previous</button><button class="button small" data-action="next-page"' + (state.pageIndex + 1 === pages ? ' disabled' : '') + '>Next →</button></div></div><details class="chart-notes"><summary>How company results are counted ⌄</summary><p>Duplicates and unverified companies remain in the returned count but receive no valid credit. Extra results do not replace rejected positions.</p></details></section>';
+  }).join('') + '</tr>').join('') + (queries.length ? '' : '<tr><td colspan="' + (data.providers.length + 1) + '">No queries match the current selection. Clear the search or remove a filter.</td></tr>') + '</tbody></table></div><div class="pagination"><span>Queries ' + (filtered.length ? start + 1 : 0) + '–' + Math.min(start + state.pageSize, filtered.length) + ' of ' + filtered.length + '; ' + esc(metric().label) + '</span><div class="page-buttons"><button class="button small" data-action="previous-page"' + (state.pageIndex === 0 ? ' disabled' : '') + '>← Previous</button><button class="button small" data-action="next-page"' + (state.pageIndex + 1 === pages ? ' disabled' : '') + '>Next →</button></div></div><details class="chart-notes"><summary>How company results are counted</summary><p>Duplicates and unverified companies remain in the returned count but receive no valid credit. Extra results do not replace rejected positions.</p></details></section>';
 }
 
 function importedReportDetails() {
@@ -319,11 +405,11 @@ function importedReportDetails() {
     limitations: report.limitations ?? [],
     outstanding_jobs: report.outstanding_jobs ?? []
   };
-  return '<section class="panel"><details class="method-metric"><summary><strong>Imported report details and limitations</strong><span class="muted">; settings, evidence version, and cost scope ⌄</span></summary><p class="panel-subtitle">Date windows use the saved fixed UTC reference. A shorter result prefix retains the full original search cost. Research and judging charges have their own disclosed scope.</p><pre>' + esc(JSON.stringify(details, null, 2)) + '</pre></details></section>';
+  return '<section class="panel"><details class="method-metric"><summary><strong>Imported report details and limitations</strong><span class="muted">Settings, evidence version, and cost scope</span></summary><p class="panel-subtitle">Date windows use the saved fixed UTC reference. A shorter result prefix retains the full original search cost. Research and judging charges have their own disclosed scope.</p><pre>' + esc(JSON.stringify(details, null, 2)) + '</pre></details></section>';
 }
 
 function methodology() {
-  return '<div class="methodology-grid"><section class="panel prose"><h2>How results are calculated</h2><p>A good list needs enough distinct companies that satisfy the exact query. Precision shows how much filler was returned. Cost and search time show what the list takes to produce.</p><p>Metrics use the same selected queries and the selected judge. Each provider, model, and effort combination is a separate configuration. A high-effort label does not mean the same thing across vendors.</p><p>Query means give each query equal weight. Cost per valid company uses total search cost divided by total valid companies. Research and judging costs are separate.</p><p>Unknown facts receive no credit. Failed searches receive zero quality. Missing searches and incomplete grading make the comparison incomplete; they do not silently become good results.</p></section><section class="panel prose"><h2>' + (synthetic() ? 'Synthetic preview data' : 'Imported report data') + '</h2><p>' + esc(data.meta.disclosure ?? stamp()) + '</p><p>' + (synthetic() ? 'The 250 query definitions and provider settings are real. Counts, costs, search times, returned companies, evidence, and judge outcomes are synthetic fixtures for exploring the interface. They are not predictions or measured claims about any provider.' : 'This file is processed locally in your browser. Its scores reflect its saved evidence and judgments. This interface does not rerun searches, fetch evidence, or independently certify the imported report.') + '</p><p>One trial cannot establish repeatability. Complexity classes describe authored requirements, not measured difficulty.</p><p>Avina / Mesh Interactive created CompanyBench and has a commercial interest in its results. The benchmark should retain disappointing results and publish corrections as new versions.</p><a href="https://github.com/Mesh-Interactive/CompanyBench/blob/main/docs/methodology.md" target="_blank" rel="noopener">Read the full methodology ↗</a></section></div>' + importedReportDetails() + '<section class="panel"><header class="panel-head"><div><h2>Metric definitions</h2><p class="panel-subtitle">The requested result limit applies to original positions. Each valid company receives one credit.</p></div></header>' + METRICS.map(item => '<details class="method-metric"><summary><strong>' + esc(item.label) + '</strong><span class="muted">; ' + direction(item) + ' ⌄</span></summary><code class="formula">' + esc(item.formula) + '</code><p>' + esc(item.description) + '</p></details>').join('') + '</section><section class="panel"><header class="panel-head"><div><h2>Providers and exact settings</h2><p class="panel-subtitle">Configurations are inspectable. No live compatibility is implied by this synthetic preview.</p></div></header><div class="table-scroll"><table><thead><tr><th>Provider</th><th>CLI name</th><th>Model / endpoint</th><th>Effort</th><th>Full settings</th></tr></thead><tbody>' + data.providers.map(item => '<tr><td>' + esc(item.label) + '</td><td>' + esc(item.id) + '</td><td>' + esc(item.model ?? item.vendor) + '</td><td>' + esc(item.effort ?? 'Native') + '</td><td><details><summary>Inspect ⌄</summary><pre>' + esc(JSON.stringify(item.configuration ?? item, null, 2)) + '</pre></details></td></tr>').join('') + '</tbody></table></div></section><section class="panel prose"><h2>Reproduce or challenge results</h2><p>Download the data, inspect the company-level condition judgments, and follow source links in measured reports. A missing source is not proof that a requirement failed. Recall is defined only for exhaustive eligible reference lists; open-ended company searches do not have a known complete denominator.</p><p>Shorter result prefixes are views of the original search, with its full cost. Captured source text keeps its original redistribution rules. The published JSON report is the source of truth for the saved calculation inputs and limitations.</p><p><a href="https://github.com/Mesh-Interactive/CompanyBench/blob/main/docs/quickstart.md" target="_blank" rel="noopener">Run the benchmark ↗</a>; <a href="https://github.com/Mesh-Interactive/CompanyBench/blob/main/docs/corrections.md" target="_blank" rel="noopener">Challenge a result ↗</a>; <button class="text-button" data-action="export-json">Download this dataset ↓</button></p></section>';
+  return '<div class="methodology-grid"><section class="panel prose"><h2>How results are calculated</h2><p>A good list needs enough distinct companies that satisfy the exact query. Precision shows how much filler was returned. Cost and search time show what the list takes to produce.</p><p>Metrics use the same selected queries and the selected judge. Each provider, model, and effort combination is a separate configuration. A high-effort label does not mean the same thing across vendors.</p><p>Query means give each query equal weight. Cost per valid company uses total search cost divided by total valid companies. Research and judging costs are separate.</p><p>Unknown facts receive no credit. Failed searches receive zero quality. Missing searches and incomplete grading make the comparison incomplete; they do not silently become good results.</p></section><section class="panel prose"><h2>' + (synthetic() ? 'Synthetic preview data' : 'Imported report data') + '</h2><p>' + esc(data.meta.disclosure ?? stamp()) + '</p><p>' + (synthetic() ? 'The 250 query definitions and provider settings are real. Counts, costs, search times, returned companies, evidence, and judge outcomes are synthetic fixtures for exploring the interface. They are not predictions or measured claims about any provider.' : 'This file is processed locally in your browser. Its scores reflect its saved evidence and judgments. This interface does not rerun searches, fetch evidence, or independently certify the imported report.') + '</p><p>One trial cannot establish repeatability. Complexity classes describe authored requirements, not measured difficulty.</p><p>Avina / Mesh Interactive created CompanyBench and has a commercial interest in its results. The benchmark should retain disappointing results and publish corrections as new versions.</p><a href="https://github.com/Mesh-Interactive/CompanyBench/blob/main/docs/methodology.md" target="_blank" rel="noopener">Read the full methodology ↗</a></section></div>' + importedReportDetails() + '<section class="panel"><header class="panel-head"><div><h2>Metric definitions</h2><p class="panel-subtitle">The requested result limit applies to original positions. Each valid company receives one credit.</p></div></header>' + METRICS.map(item => '<details class="method-metric"><summary><strong>' + esc(item.label) + '</strong><span class="muted">' + direction(item) + '</span></summary><code class="formula">' + esc(item.formula) + '</code><p>' + esc(item.description) + '</p></details>').join('') + '</section><section class="panel"><header class="panel-head"><div><h2>Providers and exact settings</h2><p class="panel-subtitle">Configurations are inspectable. No live compatibility is implied by this synthetic preview.</p></div></header><div class="table-scroll"><table><thead><tr><th>Provider</th><th>CLI name</th><th>Model / endpoint</th><th>Effort</th><th>Full settings</th></tr></thead><tbody>' + data.providers.map(item => '<tr><td>' + esc(item.label) + '</td><td>' + esc(item.id) + '</td><td>' + esc(item.model ?? item.vendor) + '</td><td>' + esc(item.effort ?? 'Native') + '</td><td><details><summary>Inspect</summary><pre>' + esc(JSON.stringify(item.configuration ?? item, null, 2)) + '</pre></details></td></tr>').join('') + '</tbody></table></div></section><section class="panel prose"><h2>Reproduce or challenge results</h2><p>Download the data, inspect the company-level condition judgments, and follow source links in measured reports. A missing source is not proof that a requirement failed. Recall is defined only for exhaustive eligible reference lists; open-ended company searches do not have a known complete denominator.</p><p>Shorter result prefixes are views of the original search, with its full cost. Captured source text keeps its original redistribution rules. The published JSON report is the source of truth for the saved calculation inputs and limitations.</p><p><a href="https://github.com/Mesh-Interactive/CompanyBench/blob/main/docs/quickstart.md" target="_blank" rel="noopener">Run the benchmark ↗</a>; <a href="https://github.com/Mesh-Interactive/CompanyBench/blob/main/docs/corrections.md" target="_blank" rel="noopener">Challenge a result ↗</a>; <button class="text-button" data-action="export-json">Download this dataset ↓</button></p></section>';
 }
 
 function complexityDefinitions() {
@@ -353,6 +439,7 @@ function closePopover(restoreFocus = false) {
 }
 
 function openPopover(key, term = '', focusSearch = false) {
+  hideTooltip();
   closeSelect();
   openedFacet = key;
   const anchor = document.querySelector('[data-facet="' + key + '"]');
@@ -378,7 +465,7 @@ function renderAllFilters() {
   $('all-filter-fields').innerHTML = Object.keys(options).map((key, index) => {
     const labelMatches = FACET_LABELS[key].toLowerCase().includes(term);
     if (term && !labelMatches && !options[key].some(value => (facetLabel(key,value) + ' ' + String(value)).toLowerCase().includes(term))) return '';
-    return '<details class="facet-section" data-key="' + esc(key) + '"' + (openKeys.has(key) || (state.facets[key] ?? []).length || term || index < 2 ? ' open' : '') + '><summary>' + esc(FACET_LABELS[key]) + '<span class="muted">' + ((state.facets[key] ?? []).length ? (state.facets[key] ?? []).length + ' selected; ' : '') + '⌄</span></summary><div class="facet-options">' + facetChoices(key, labelMatches ? '' : term) + '</div></details>';
+    return '<details class="facet-section" data-key="' + esc(key) + '"' + (openKeys.has(key) || (state.facets[key] ?? []).length || term || index < 2 ? ' open' : '') + '><summary>' + esc(FACET_LABELS[key]) + '<span class="muted">' + ((state.facets[key] ?? []).length ? (state.facets[key] ?? []).length + ' selected' : '') + '</span></summary><div class="facet-options">' + facetChoices(key, labelMatches ? '' : term) + '</div></details>';
   }).join('');
   $('filter-match-count').textContent = filtered.length + ' matching queries';
 }
@@ -391,8 +478,9 @@ function toggleFacet(key, value) {
 }
 
 function showMetricHelp(id = state.metric) {
+  hideTooltip();
   const item = byId(id) ?? metric();
-  $('metric-help-content').innerHTML = '<header class="drawer-header"><h2 id="metric-help-title">' + esc(item.label) + '</h2><button class="icon-button" data-action="close-metric" aria-label="Close metric definition">×</button></header><div class="drawer-body"><span class="badge purple">' + direction(item) + '</span><code class="formula">' + esc(item.formula) + '</code><p>' + esc(item.description) + '</p><p>Query averages give each query equal weight. Trials are averaged within the query before averaging across queries. Cost efficiency uses sums, rather than averaging per-query cost ratios.</p><p>' + esc(stamp()) + '. Undefined values are shown as “Not available”; they are never replaced with zero.</p></div>';
+  $('metric-help-content').innerHTML = '<header class="drawer-header"><h2 id="metric-help-title">' + esc(item.label) + '</h2><button class="icon-button" data-action="close-metric" aria-label="Close metric definition"></button></header><div class="drawer-body"><span class="badge purple">' + direction(item) + '</span><code class="formula">' + esc(item.formula) + '</code><p>' + esc(item.description) + '</p><p>Query averages give each query equal weight. Trials are averaged within the query before averaging across queries. Cost efficiency uses sums, rather than averaging per-query cost ratios.</p><p>' + esc(stamp()) + '. Undefined values are shown as “Not available”; they are never replaced with zero.</p></div>';
   $('metric-dialog').showModal();
 }
 
@@ -415,15 +503,17 @@ function openDetail(queryId, providerId) {
 }
 
 function renderDetail() {
+  hideTooltip();
   if (!state.detail) return;
   const query = data.queries.find(item => item.id === state.detail.queryId);
   const item = provider(state.detail.providerId);
   const row = getRow(data, query.id, item.id, state.trial);
   const values = getMetrics(row, state.judge, query);
   const conditions = query.conditions ?? [];
-  $('drawer-content').innerHTML = '<header class="drawer-header"><div><h2 id="drawer-title">Company results and evidence</h2><p class="result-context">' + esc(query.id) + ': ' + esc(item.label) + '</p></div><button class="icon-button" data-action="close-detail" aria-label="Close company results">×</button></header><div class="drawer-body"><span class="badge purple">' + esc(stamp()) + '</span><p class="drawer-query">' + esc(query.query) + '</p><div class="drawer-context"><span class="badge">' + esc(complexityLabel(query.complexity)) + '</span><span class="badge">' + esc(query.industry) + '</span><span class="muted small-copy">' + esc(query.company_unit ?? '') + '</span></div><div class="drawer-controls"><label class="control-label">Provider <select id="detail-provider" aria-label="Detail provider">' + data.providers.map(p => '<option value="' + esc(p.id) + '"' + (p.id === item.id ? ' selected' : '') + '>' + esc(p.label) + '</option>').join('') + '</select></label><label class="control-label">Evaluator <select id="detail-judge" aria-label="Result evaluator">' + data.judges.map(j => '<option value="' + esc(j.id) + '"' + (j.id === state.judge ? ' selected' : '') + '>' + esc(j.label) + '</option>').join('') + '</select></label></div>' + (values ? '<div class="drawer-metrics">' + [['Valid companies found',count(values.valid_companies)],['Precision',display(values.precision,'precision')],['Cost per valid company',display(values.cost_per_valid_company,'cost_per_valid_company')],['Search time',display(values.latency_seconds,'mean_latency_seconds')]].map(([label,value]) => '<div class="mini-stat">' + esc(label) + '<strong>' + esc(value) + '</strong></div>').join('') + '</div><p class="muted small-copy">' + 'Search cost: ' + (finite(values.cost_usd) ? '$'+values.cost_usd.toFixed(3) : 'Unknown') + '. ' + count(values.returned_companies) + ' returned positions; ' + count(values.requested_count) + ' requested; ' + esc(values.search_status) + (values.search_error ? '; ' + esc(values.search_error) : '') + '</p>' : '<div class="acceptance">No saved result exists for this query, provider, trial, and judge. This is unattempted or incomplete work, not a scored empty list.</div>') + '<details class="acceptance"><summary>Acceptance criteria and verification limits <span>⌄</span></summary><p>' + esc(query.acceptance ?? '') + '</p><ul>' + conditions.map(condition => '<li><strong>' + esc(condition.id) + '</strong>; ' + esc(condition.description) + '</li>').join('') + '</ul><p><strong>Logic:</strong> ' + esc(JSON.stringify(query.rule ?? query.logic ?? 'AND')) + '</p><p><strong>Evidence:</strong> ' + esc(query.evidence ?? '') + '</p><p><strong>Known limitations:</strong> ' + esc(query.observability ?? query.verification_limitations ?? query.pitfalls ?? 'Consult the query definition.') + '</p><p><strong>Fixed reference time:</strong> ' + esc(data.meta.reference_time ?? 'Not recorded') + '</p>' + (query.reference ? '<p><strong>Reference list:</strong> ' + (query.reference.exhaustive ? 'Exhaustive' : 'Examples only') + '; ' + (query.reference.companies ?? []).length + ' companies. ' + (synthetic() ? 'The synthetic returned companies below are placeholders, not these reference companies.' : '') + '</p>' : '') + '<details><summary>Complete query definition ⌄</summary><pre>' + esc(JSON.stringify(query, null, 2)) + '</pre></details></details><details class="acceptance"><summary>Exact provider settings <span>⌄</span></summary><pre>' + esc(JSON.stringify(item.configuration ?? item, null, 2)) + '</pre></details><div class="company-toolbar"><label class="search-input"><input id="company-search" type="search" value="' + esc(state.companySearch) + '" placeholder="Find a company…" aria-label="Search companies"></label><select id="company-verdict" aria-label="Company result status"><option value="all">All company results</option>' + Object.entries(verdictLabels).filter(([key]) => key.endsWith('companies') || ['unresolved_identities','grading_errors','duplicates','malformed'].includes(key)).map(([key,label]) => '<option value="' + key + '"' + (state.companyVerdict === key ? ' selected' : '') + '>' + esc(label) + '</option>').join('') + '</select></div><div id="company-results"></div></div><div class="drawer-footer"><span>' + esc(item.label) + '; trial ' + state.trial + '; ' + esc(state.judge) + '</span><button class="button small" data-action="export-detail">Download companies (JSON)</button></div>';
+  $('drawer-content').innerHTML = '<header class="drawer-header"><div><h2 id="drawer-title">Company results and evidence</h2><p class="result-context">' + esc(query.id) + ': ' + esc(item.label) + '</p></div><button class="icon-button" data-action="close-detail" aria-label="Close company results"></button></header><div class="drawer-body"><span class="badge purple">' + esc(stamp()) + '</span><p class="drawer-query">' + esc(query.query) + '</p><div class="drawer-context"><span class="badge">' + esc(complexityLabel(query.complexity)) + '</span><span class="badge">' + esc(query.industry) + '</span><span class="muted small-copy">' + esc(query.company_unit ?? '') + '</span></div><div class="drawer-controls"><label class="control-label">Provider <select id="detail-provider" aria-label="Detail provider">' + data.providers.map(p => '<option value="' + esc(p.id) + '"' + (p.id === item.id ? ' selected' : '') + '>' + esc(p.label) + '</option>').join('') + '</select></label><label class="control-label">Evaluator <select id="detail-judge" aria-label="Result evaluator">' + data.judges.map(j => '<option value="' + esc(j.id) + '"' + (j.id === state.judge ? ' selected' : '') + '>' + esc(j.label) + '</option>').join('') + '</select></label></div>' + (values ? '<div class="drawer-metrics">' + [['Valid companies found',count(values.valid_companies)],['Precision',display(values.precision,'precision')],['Cost per valid company',display(values.cost_per_valid_company,'cost_per_valid_company')],['Search time',display(values.latency_seconds,'mean_latency_seconds')]].map(([label,value]) => '<div class="mini-stat">' + esc(label) + '<strong>' + esc(value) + '</strong></div>').join('') + '</div><p class="muted small-copy">' + 'Search cost: ' + (finite(values.cost_usd) ? '$'+values.cost_usd.toFixed(3) : 'Unknown') + '. ' + count(values.returned_companies) + ' returned positions; ' + count(values.requested_count) + ' requested; ' + esc(values.search_status) + (values.search_error ? '; ' + esc(values.search_error) : '') + '</p>' : '<div class="acceptance">No saved result exists for this query, provider, trial, and judge. This is unattempted or incomplete work, not a scored empty list.</div>') + '<details class="acceptance"><summary>Acceptance criteria and verification limits</summary><p>' + esc(query.acceptance ?? '') + '</p><ul>' + conditions.map(condition => '<li><strong>' + esc(condition.id) + '</strong>; ' + esc(condition.description) + '</li>').join('') + '</ul><p><strong>Logic:</strong> ' + esc(JSON.stringify(query.rule ?? query.logic ?? 'AND')) + '</p><p><strong>Evidence:</strong> ' + esc(query.evidence ?? '') + '</p><p><strong>Known limitations:</strong> ' + esc(query.observability ?? query.verification_limitations ?? query.pitfalls ?? 'Consult the query definition.') + '</p><p><strong>Fixed reference time:</strong> ' + esc(data.meta.reference_time ?? 'Not recorded') + '</p>' + (query.reference ? '<p><strong>Reference list:</strong> ' + (query.reference.exhaustive ? 'Exhaustive' : 'Examples only') + '; ' + (query.reference.companies ?? []).length + ' companies. ' + (synthetic() ? 'The synthetic returned companies below are placeholders, not these reference companies.' : '') + '</p>' : '') + '<details><summary>Complete query definition</summary><pre>' + esc(JSON.stringify(query, null, 2)) + '</pre></details></details><details class="acceptance"><summary>Exact provider settings</summary><pre>' + esc(JSON.stringify(item.configuration ?? item, null, 2)) + '</pre></details><div class="company-toolbar"><label class="search-input"><input id="company-search" type="search" value="' + esc(state.companySearch) + '" placeholder="Find a company…" aria-label="Search companies"></label><select id="company-verdict" aria-label="Company result status"><option value="all">All company results</option>' + Object.entries(verdictLabels).filter(([key]) => key.endsWith('companies') || ['unresolved_identities','grading_errors','duplicates','malformed'].includes(key)).map(([key,label]) => '<option value="' + key + '"' + (state.companyVerdict === key ? ' selected' : '') + '>' + esc(label) + '</option>').join('') + '</select></div><div id="company-results"></div></div><div class="drawer-footer"><span>' + esc(item.label) + '; trial ' + state.trial + '; ' + esc(data.judges.find(j=>j.id===state.judge)?.label ?? state.judge) + '</span><button class="button small" data-action="export-detail">Download companies (JSON)</button></div>';
   renderCompanies();
   enhanceSelects();
+  enhanceTooltips();
 }
 
 function detailSlots() {
@@ -435,7 +525,7 @@ function detailSlots() {
 function renderCompanies() {
   const all = detailSlots();
   const visible = all.filter(slot => (state.companyVerdict === 'all' || slot.category === state.companyVerdict) && [slot.name,slot.domain,slot.company?.name,slot.company?.domain,slot.position].join(' ').toLowerCase().includes(state.companySearch.toLowerCase()));
-  $('company-results').innerHTML = '<p class="muted small-copy" style="margin-bottom:12px">' + visible.length + ' of ' + all.length + ' returned positions shown. Original ordering is preserved.</p><div class="table-scroll"><table class="company-table"><thead><tr><th>Position</th><th>Company</th><th>Evaluation</th><th>Details</th></tr></thead><tbody>' + visible.map(slot => '<tr><td>' + esc(slot.position) + '</td><td><div class="company-name">' + esc(slot.name ?? slot.company?.name ?? 'Unresolved company') + '</div><div class="company-domain">' + esc(slot.domain ?? slot.company?.domain ?? 'No usable company domain') + '</div></td><td><span class="badge ' + verdictClass(slot) + '">' + esc(verdictLabel(slot)) + '</span></td><td><button class="text-button" data-company-position="' + esc(slot.position) + '" aria-expanded="false">Evidence ⌄</button></td></tr><tr data-company-details="' + esc(slot.position) + '" hidden><td colspan="4">' + companyDetails(slot) + '</td></tr>').join('') + (visible.length ? '' : '<tr><td colspan="4">No company positions match this filter.</td></tr>') + '</tbody></table></div>';
+  $('company-results').innerHTML = '<p class="muted small-copy" style="margin-bottom:12px">' + visible.length + ' of ' + all.length + ' returned positions shown. Original ordering is preserved.</p><div class="table-scroll"><table class="company-table"><thead><tr><th>Position</th><th>Company</th><th>Evaluation</th><th>Details</th></tr></thead><tbody>' + visible.map(slot => '<tr><td>' + esc(slot.position) + '</td><td><div class="company-name">' + esc(slot.name ?? slot.company?.name ?? 'Unresolved company') + '</div><div class="company-domain">' + esc(slot.domain ?? slot.company?.domain ?? 'No usable company domain') + '</div></td><td><span class="badge ' + verdictClass(slot) + '">' + esc(verdictLabel(slot)) + '</span></td><td><button class="text-button" data-company-position="' + esc(slot.position) + '" aria-expanded="false">Evidence</button></td></tr><tr data-company-details="' + esc(slot.position) + '" hidden><td colspan="4">' + companyDetails(slot) + '</td></tr>').join('') + (visible.length ? '' : '<tr><td colspan="4">No company positions match this filter.</td></tr>') + '</tbody></table></div>';
 }
 
 function companyDetails(slot) {
@@ -452,7 +542,7 @@ function companyDetails(slot) {
     const query = data.queries.find(item => item.id === state.detail.queryId);
     const authored = query.conditions?.find(item => item.id === id);
     return '<div class="condition-row"><strong>' + esc(id) + '; ' + esc(condition.description ?? authored?.description ?? '') + '</strong><span class="badge ' + (status === 'met' ? 'green' : status === 'failed' ? 'red' : 'amber') + '">' + esc(statusLabel[status] ?? status) + '</span><p class="company-reason">' + esc(condition.reason ?? condition.explanation ?? 'No reason saved.') + '</p><p class="muted small-copy">Evidence references: ' + esc((condition.evidence_refs ?? condition.evidence_ids ?? []).join(', ') || 'None') + '</p></div>';
-  }).join('') : '<p class="muted small-copy">No condition judgments were saved for this position.</p>') + '<details class="acceptance"><summary>Complete saved judgment ⌄</summary><pre>' + esc(JSON.stringify(slot.judgment ?? {category: slot.category, explanation: slot.explanation}, null, 2)) + '</pre></details><h3 style="margin:16px 0 4px">Evidence sources</h3>' + (sources.length ? sources.map(source => {
+  }).join('') : '<p class="muted small-copy">No condition judgments were saved for this position.</p>') + '<details class="acceptance"><summary>Complete saved judgment</summary><pre>' + esc(JSON.stringify(slot.judgment ?? {category: slot.category, explanation: slot.explanation}, null, 2)) + '</pre></details><h3 style="margin:16px 0 4px">Evidence sources</h3>' + (sources.length ? sources.map(source => {
     const url = safeUrl(source.url);
     return '<div class="condition-row"><strong>' + esc(source.title ?? source.id) + '</strong><p class="small-copy">' + esc(source.id) + '; ' + esc(source.method ?? 'Saved source') + '</p><blockquote class="source-quote">' + esc(source.text || 'Source text is missing or omitted from the published report. No fact is inferred from its absence.') + '</blockquote>' + (source.synthetic || synthetic() ? '<p class="muted small-copy">Reserved example URL: ' + esc(source.url) + '; This is not a live company source.</p>' : url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">Open captured source ↗</a>' : '<p class="muted small-copy">A safe HTTP(S) source link is not available.</p>') + '<p class="muted small-copy">Fetched: ' + esc(source.fetched_at ?? 'Unknown') + '; Published: ' + esc(source.published_at ?? 'Unknown') + '</p>' + (source.content_hash ? '<p class="muted small-copy">Source hash: ' + esc(source.content_hash) + '</p>' : '') + '</div>';
   }).join('') : '<p class="muted small-copy">No evidence sources are attached. Missing evidence does not establish a failed condition.</p>') + '</div>';
@@ -492,6 +582,7 @@ function changePage(page) {
   closePopover();
   saveLocation(true);
   render();
+  window.scrollTo({top:0,behavior:'instant'});
 }
 
 document.addEventListener('click', event => {
@@ -509,7 +600,12 @@ document.addEventListener('click', event => {
   if (target.dataset.provider) {
     const id = target.dataset.provider;
     if (active(id)) state.providers.delete(id); else state.providers.add(id);
-    closePopover(); render(); return;
+    closePopover(); render();
+    if (target.dataset.point && lastPointerType === 'touch') {
+      const point = [...document.querySelectorAll('[data-point]')].find(element=>element.dataset.point===id);
+      if (point) showTooltip(point);
+    }
+    return;
   }
   if (target.dataset.facet) {
     if (openedFacet === target.dataset.facet) closePopover(); else openPopover(target.dataset.facet, '', true);
@@ -604,20 +700,53 @@ document.addEventListener('input', event => {
   }
 });
 
-function pointDetails(event) {
-  const point = event.target.closest('[data-point]');
-  if (!point || !$('chart-tooltip')) return;
-  const row = summaries.find(item => item.provider === point.dataset.point);
-  const item = provider(row.provider);
-  $('chart-tooltip').hidden = false;
-  $('chart-tooltip').innerHTML = '<strong>' + esc(item.label) + '</strong><div class="point-values"><span>Valid companies: ' + display(row.mean_valid_companies,'mean_valid_companies') + ' per query</span><span>Quality score: ' + display(row.quality_score,'quality_score') + '</span><span>Cost per valid company: ' + display(row.cost_per_valid_company,'cost_per_valid_company') + '</span><span>Search time: ' + display(row.mean_latency_seconds,'mean_latency_seconds') + '</span></div>';
-}
-document.addEventListener('pointerover', pointDetails);
-document.addEventListener('focusin', pointDetails);
+// Match Avina's deliberate hover delay. Bare pointer-enter events after a
+// dialog closes do not reopen a tooltip underneath the cursor.
+document.addEventListener('pointermove', event => {
+  if (event.pointerType === 'touch' || !(event.movementX || event.movementY)) return;
+  if ($('hover-tooltip').contains(event.target)) { clearTimeout(tooltipCloseTimer); return; }
+  const target = event.target.closest(tooltipTargets);
+  if (!target) return;
+  clearTimeout(tooltipCloseTimer);
+  if (target === tooltipAnchor || target === pendingTooltip) return;
+  hideTooltip();
+  pendingTooltip = target;
+  tooltipOpenTimer = setTimeout(()=>showTooltip(target),200);
+});
+document.addEventListener('pointerout', event => {
+  const target = event.target.closest(tooltipTargets);
+  const tooltip = $('hover-tooltip');
+  if (event.relatedTarget && (target?.contains(event.relatedTarget) || tooltip.contains(event.relatedTarget))) return;
+  if (target === pendingTooltip) { clearTimeout(tooltipOpenTimer); pendingTooltip = null; }
+  if (target === tooltipAnchor && keyboardFocus && document.activeElement === target) return;
+  if (target === tooltipAnchor || tooltip.contains(event.target)) {
+    clearTimeout(tooltipCloseTimer);
+    tooltipCloseTimer = setTimeout(()=>hideTooltip(),100);
+  }
+});
+document.addEventListener('pointerdown', event => {
+  keyboardFocus = false;
+  lastPointerType = event.pointerType;
+  hideTooltip();
+});
+document.addEventListener('focusin', event => {
+  const target = event.target.closest(tooltipTargets);
+  if (keyboardFocus && target) showTooltip(target);
+});
+document.addEventListener('focusout', event => {
+  if (event.target === tooltipAnchor) hideTooltip();
+});
+document.addEventListener('scroll', event => {
+  if (!$('hover-tooltip').contains(event.target)) hideTooltip();
+}, {capture:true,passive:true});
 document.addEventListener('toggle', event => {
   if (event.target.matches('.provider-rankings')) rankingsOpen = event.target.open;
 }, {capture:true});
 document.addEventListener('keydown', event => {
+  keyboardFocus = event.key === 'Tab';
+  if (event.key === 'Escape' && (!$('hover-tooltip').hidden || pendingTooltip)) {
+    event.preventDefault(); event.stopPropagation(); hideTooltip(); return;
+  }
   const trigger = event.target.closest('[data-select]');
   if (trigger && ['ArrowDown','ArrowUp','Home','End'].includes(event.key)) {
     event.preventDefault();
@@ -643,6 +772,7 @@ document.addEventListener('keydown', event => {
   if (['Enter',' '].includes(event.key) && event.target.matches('.chart-point')) { event.preventDefault(); event.target.dispatchEvent(new MouseEvent('click', {bubbles:true})); }
 });
 window.addEventListener('resize', () => {
+  hideTooltip();
   closePopover(); closeSelect();
   document.documentElement.style.setProperty('--header-height', document.querySelector('.site-header').offsetHeight + 'px');
   const chart = document.querySelector('.primary-chart .tradeoff-chart');
@@ -651,6 +781,7 @@ window.addEventListener('resize', () => {
 window.addEventListener('scroll', () => { closePopover(); closeSelect(); }, {passive:true});
 window.addEventListener('popstate', () => { readLocation(); closePopover(); render(); });
 $('detail-dialog').addEventListener('close', () => {
+  hideTooltip();
   closeSelect();
   state.detail = null;
   const cell = detailFocusTarget && [...document.querySelectorAll('[data-result-provider]')].find(button => button.dataset.query === detailFocusTarget.queryId && button.dataset.resultProvider === detailFocusTarget.providerId);

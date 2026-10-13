@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#f9fafb">
   <title>CompanyBench: Company search benchmark results</title>
   <link rel="icon" href="./assets/avina-mark.png">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=3">
 </head>
 <body>
   <a class="skip-link" href="#main" data-action="skip-to-results">Skip to results</a>
@@ -27,7 +27,7 @@
         <a class="quiet-link github-link" href="https://github.com/Mesh-Interactive/CompanyBench" target="_blank" rel="noopener">GitHub ↗</a>
         <button class="button small" data-action="share">Copy view link</button>
         <details class="download-menu">
-          <summary class="button small">Download data ↓</summary>
+          <summary class="button small">Download data</summary>
           <div class="menu-panel">
             <button data-action="export-csv">Filtered results (CSV)</button>
             <button data-action="export-json">Current dataset (JSON)</button>
@@ -67,7 +67,7 @@
       </div>
     </section>
     <details class="provider-selector">
-      <summary>Providers <span id="selected-provider-count"></span> ⌄</summary>
+      <summary><span>Providers <span id="selected-provider-count"></span></span></summary>
       <div class="section-line compact">
         <div><button class="text-button" data-action="select-all">Select all</button><button class="text-button" data-action="select-none">Deselect all</button></div>
       </div>
@@ -81,11 +81,12 @@
     </footer>
   </main>
   <div id="popover-root"></div>
+  <div id="hover-tooltip" class="hover-tooltip" role="tooltip" popover="manual" hidden></div>
   <dialog id="detail-dialog" class="drawer" aria-labelledby="drawer-title">
     <div id="drawer-content"></div>
   </dialog>
   <dialog id="filter-dialog" class="filter-dialog" aria-labelledby="filters-title">
-    <header class="drawer-header"><h2 id="filters-title">Query filters</h2><button class="icon-button" data-action="close-filters" aria-label="Close filters">×</button></header>
+    <header class="drawer-header"><h2 id="filters-title">Query filters</h2><button class="icon-button" data-action="close-filters" aria-label="Close filters"></button></header>
     <p class="filter-explanation">Match any selected value within a field and every selected field.</p>
     <label class="search-input">Find a filter<input id="filter-search" type="search" placeholder="Industry, geography, technologies…" aria-label="Find a filter"></label>
     <div id="all-filter-fields" class="all-filter-fields"></div>

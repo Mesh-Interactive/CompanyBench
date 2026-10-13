@@ -123,6 +123,13 @@ Escape and focus restoration. Small screens can scroll provider columns while
 retaining the query column, and drawers expand to the available screen width.
 Color accompanies names and numbers; it is not the only source of meaning.
 
+Chart points, ranking rows, query result cells and metric help controls show
+floating tooltips beside their source. Mouse tooltips open after 200 milliseconds
+of deliberate hover; keyboard focus opens them immediately. Escape dismisses
+them. Tooltips stay within the viewport and do not change the page layout.
+Metric help controls also open a definition dialog when selected. Disclosures,
+dropdowns and filters use consistent vector chevrons that rotate when expanded.
+
 See [the research notes](RESEARCH.md) for the benchmark sites that informed the
 layout and the reasoning behind the comparison views.
 
